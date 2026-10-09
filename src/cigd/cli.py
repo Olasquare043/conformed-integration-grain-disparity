@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from rich.table import Table
 
 from cigd.config import PROFILES, REPOSITORY_ROOT, StudyConfig, load_config
+from cigd.experiments.run import EXPERIMENT_NAMES, run_experiments
 from cigd.ingest.run import DOWNLOADERS, download_sources
 from cigd.ingest.source_check import cached_file, check_all_sources
 from cigd.logging import get_logger, setup_logging, show, stage_banner
@@ -66,6 +67,11 @@ def run_warehouse(config: StudyConfig, arguments: argparse.Namespace) -> dict[st
     return build_warehouse(config)
 
 
+def run_experiment_stage(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Run the pre-registered experiments (or the one named with --experiment)."""
+    return run_experiments(config, arguments.experiment)
+
+
 def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
     """Run the pytest suite against this profile's outputs."""
     # Tests read the profile from the environment so they check the run that was just built.
@@ -82,10 +88,11 @@ STAGES: dict[str, StageFunction] = {
     "data": run_data,
     "profile": run_profiling,
     "warehouse": run_warehouse,
+    "experiments": run_experiment_stage,
     "test": run_tests,
 }
 # The order "all" runs the stages in. Later stages read what earlier ones wrote.
-PIPELINE_ORDER = ["check-sources", "data", "profile", "warehouse", "test"]
+PIPELINE_ORDER = ["check-sources", "data", "profile", "warehouse", "experiments", "test"]
 
 
 def set_global_seeds(seed: int) -> None:
@@ -144,6 +151,9 @@ def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--profile", choices=PROFILES, default="full")
     parser.add_argument("--quiet", action="store_true", help="turn off progress bars")
     parser.add_argument("--source", choices=list(DOWNLOADERS), help="data stage: one source only")
+    parser.add_argument(
+        "--experiment", choices=EXPERIMENT_NAMES, help="experiments stage: one experiment only"
+    )
     return parser.parse_args(argv)
 
 

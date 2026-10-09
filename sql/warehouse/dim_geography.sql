@@ -1,7 +1,8 @@
 -- Grain: one geography member at one level of the nested hierarchy: zone, borough,
 -- metro region, state, PADD and country. Each row carries the codes of all its
 -- ancestors, so any fact can roll up by grouping on those columns. The 16 NYSERDA
--- regions are all in New York State, PADD 1B and the United States.
+-- regions are all in New York State, PADD 1B and the United States. Zones carry
+-- their centroid from the TLC shapefile (State Plane feet); zones 264 and 265 have none.
 CREATE TABLE dim_geography AS
 WITH country_members AS (
     SELECT DISTINCT
@@ -83,12 +84,16 @@ SELECT
     geography_level,
     geography_code,
     geography_name,
-    zone_id,
+    all_members.zone_id,
     borough_code,
     region_code,
     state_code,
     padd_code,
     country_code,
-    region_code IN (SELECT region_code FROM stg_metro_region) AS is_nyserda_region
+    region_code IN (SELECT region_code FROM stg_metro_region) AS is_nyserda_region,
+    centroids.centroid_x_feet,
+    centroids.centroid_y_feet
 FROM all_members
+LEFT JOIN stg_zone_centroid AS centroids
+    ON centroids.zone_id = all_members.zone_id
 ORDER BY geography_key

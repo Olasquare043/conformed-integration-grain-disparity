@@ -37,6 +37,7 @@ class StudyConfig:
     manifest_path: Path
     sources: dict[str, Any]
     quality: dict[str, Any]
+    experiments: dict[str, Any]
     config_hash: str
 
     @property
@@ -76,6 +77,17 @@ def hash_settings(settings: dict[str, Any]) -> str:
     return hashlib.sha256(canonical_text.encode("utf-8")).hexdigest()[:16]
 
 
+def merge_settings(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+    """Return base with overrides applied key by key, recursing into nested sections."""
+    merged = dict(base)
+    for key, value in overrides.items():
+        if isinstance(value, dict) and isinstance(base.get(key), dict):
+            merged[key] = merge_settings(base[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
 def resolve_data_root(configured_root: str) -> Path:
     """Use CIGD_DATA_DIR when set, otherwise the configured folder inside the repository."""
     override = os.environ.get(DATA_DIRECTORY_VARIABLE, "").strip()
@@ -90,7 +102,10 @@ def load_config(profile: str = "full") -> StudyConfig:
         raise ValueError(f"Unknown profile {profile!r}; expected one of {PROFILES}")
 
     raw_settings = read_study_yaml()
-    study_settings = {**raw_settings["study"], **raw_settings["profiles"][profile]}
+    profile_settings = dict(raw_settings["profiles"][profile])
+    experiment_overrides = profile_settings.pop("experiments", {})
+    study_settings = {**raw_settings["study"], **profile_settings}
+    experiment_settings = merge_settings(raw_settings["experiments"], experiment_overrides)
     path_settings = raw_settings["paths"]
 
     results_key = "smoke_results_dir" if profile == "smoke" else "results_dir"
@@ -100,6 +115,7 @@ def load_config(profile: str = "full") -> StudyConfig:
         "study": study_settings,
         "sources": raw_settings["sources"],
         "quality": raw_settings["quality"],
+        "experiments": experiment_settings,
     }
 
     return StudyConfig(
@@ -119,5 +135,6 @@ def load_config(profile: str = "full") -> StudyConfig:
         manifest_path=REPOSITORY_ROOT / path_settings["manifest"],
         sources=raw_settings["sources"],
         quality=raw_settings["quality"],
+        experiments=experiment_settings,
         config_hash=hash_settings(resolved_for_hash),
     )

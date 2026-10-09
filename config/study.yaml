@@ -27,14 +27,71 @@ study:
 profiles:
   full: {}
   smoke:
+    # Five trip months, so the fine-grain test month (2024-05) has training data
+    # under the four-month TLC release rule.
     trip_first_month: "2024-01"
-    trip_last_month: "2024-01"
+    trip_last_month: "2024-05"
     trip_history_first_month: "2023-12"
     trip_history_last_month: "2023-12"
     price_first_week: "2023-01-02"
-    data_cutoff_date: "2024-03-31"
-    # Fifteen months are too short to estimate the level bias; computed and recorded only.
+    data_cutoff_date: "2024-06-30"
+    # Eighteen months are too short to estimate the level bias; computed and recorded only.
     enforce_eia_level_tolerance: false
+    # Smoke runs every model path on small samples, short periods and fewer trees,
+    # to check the pipeline in minutes; only the settings listed here differ from the
+    # paper run, and no smoke number is reported.
+    experiments:
+      bootstrap_resamples: 200
+      latency_timed_runs: 5
+      warehouse_builds: 2
+      fine:
+        training_buckets: [0, 10]
+        test_buckets: [500, 505]
+        main_test_months: ["2024-05", "2024-05"]
+        robustness_test_months: ["2024-05", "2024-05"]
+        lightgbm:
+          n_estimators: 50
+      coarse:
+        first_training_target: "2023-02-06"
+        evaluation_targets: ["2024-04-01", "2024-06-24"]
+        ridge_selection_targets: ["2024-01-01", "2024-03-25"]
+        lightgbm:
+          n_estimators: 50
+
+# Pre-registered in docs/analysis_plan.md; change only with a dated entry in its change log.
+experiments:
+  bootstrap_resamples: 2000
+  latency_timed_runs: 30
+  warehouse_builds: 3
+  publication_lags:
+    # Trip records for month m are usable from the first day of month m + 4.
+    tlc_months_until_usable: 4
+    # Weather for day d is usable from day d + 7.
+    weather_days: 7
+  fine:
+    sample_bucket_count: 1000
+    # Half-open bucket ranges [first, last).
+    training_buckets: [0, 50]
+    test_buckets: [500, 520]
+    training_first_month: "2024-01"
+    main_test_months: ["2025-01", "2025-12"]
+    robustness_test_months: ["2024-07", "2024-12"]
+    lightgbm:
+      n_estimators: 500
+      learning_rate: 0.05
+      num_leaves: 63
+      min_child_samples: 100
+  coarse:
+    first_training_target: "2018-05-07"
+    evaluation_targets: ["2023-01-02", "2025-12-22"]
+    ridge_selection_targets: ["2022-01-03", "2022-12-26"]
+    ridge_alphas: [0.01, 0.1, 1, 10, 100, 1000]
+    covid_excluded_targets: ["2020-03-02", "2021-06-28"]
+    lightgbm:
+      n_estimators: 300
+      learning_rate: 0.05
+      num_leaves: 15
+      min_child_samples: 20
 
 paths:
   # Raw downloads go to <data_root>/raw and derived data to <data_root>/<profile>,
@@ -53,6 +110,10 @@ sources:
     url_template: https://d37ci6vzurychx.cloudfront.net/trip-data/fhvhv_tripdata_{month}.parquet
   taxi_zone_lookup:
     url: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv
+  # Zone polygons in NAD83 New York State Plane, Long Island (US survey feet),
+  # used only for the centroid distance between pickup and dropoff zones.
+  taxi_zone_shapefile:
+    url: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zones.zip
   nyserda_gasoline:
     dataset_id: nqur-w4p7
     export_url: https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD

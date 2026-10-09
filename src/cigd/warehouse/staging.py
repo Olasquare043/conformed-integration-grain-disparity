@@ -1,5 +1,6 @@
 """Load the sources the SQL steps read: Python-prepared frames and a view over raw trips."""
 
+from collections import defaultdict
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -7,12 +8,14 @@ import duckdb
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import shapefile
+import shapely
 from pandas.tseries.holiday import USFederalHolidayCalendar
 
 from cigd.config import StudyConfig
 from cigd.ingest.nyserda import read_price_panel
 from cigd.ingest.open_meteo import WEATHER_LEAD_DAYS, read_weather
-from cigd.ingest.tlc import months_in_window, yellow_taxi_files
+from cigd.ingest.tlc import months_in_window, yellow_taxi_files, zone_shapefile_path
 from cigd.ingest.trip_history import count_trips_by_zone_day, zone_day_aggregate_path
 from cigd.logging import make_progress
 
@@ -75,6 +78,25 @@ def zone_day_counts(config: StudyConfig) -> pa.Table:
     return pa.concat_tables(monthly_tables, promote_options="permissive")
 
 
+def zone_centroids(config: StudyConfig) -> pd.DataFrame:
+    """Return each taxi zone's centroid in State Plane feet, from the TLC zone shapefile.
+
+    A zone drawn as several shapes is merged into one before its centroid is taken.
+    """
+    shapes_by_zone = defaultdict(list)
+    with shapefile.Reader(str(zone_shapefile_path(config))) as shapes:
+        for shape_record in shapes.iterShapeRecords():
+            zone_id = int(shape_record.record["LocationID"])
+            shapes_by_zone[zone_id].append(shapely.geometry.shape(shape_record.shape))
+    centroid_rows = []
+    for zone_id in sorted(shapes_by_zone):
+        centroid = shapely.union_all(shapes_by_zone[zone_id]).centroid
+        centroid_rows.append(
+            {"zone_id": zone_id, "centroid_x_feet": centroid.x, "centroid_y_feet": centroid.y}
+        )
+    return pd.DataFrame(centroid_rows)
+
+
 def load_frame(connection: duckdb.DuckDBPyConnection, table_name: str, frame: object) -> None:
     """Copy a pandas frame or Arrow table into a warehouse table."""
     connection.register("frame_to_load", frame)
@@ -119,6 +141,7 @@ def stage_sources(connection: duckdb.DuckDBPyConnection, config: StudyConfig) ->
     """Load every Python-prepared source and create the raw trip view."""
     first_day, last_day = calendar_range(config)
     load_frame(connection, "stg_us_federal_holiday", us_federal_holidays(first_day, last_day))
+    load_frame(connection, "stg_zone_centroid", zone_centroids(config))
     load_frame(connection, "stg_trip_validity_threshold", trip_validity_thresholds(config))
     load_frame(connection, "stg_fuel_price", fuel_prices_for_staging(config))
     load_frame(connection, "stg_weather", read_weather(config))

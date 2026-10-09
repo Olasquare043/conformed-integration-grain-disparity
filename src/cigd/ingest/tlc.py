@@ -6,6 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pyarrow.parquet as pq
 import requests
+import shapefile
 
 from cigd.config import StudyConfig
 from cigd.ingest.download import DownloadOutcome, ensure_downloaded
@@ -64,9 +65,35 @@ def download_zone_lookup(config: StudyConfig, session: requests.Session) -> Down
     )
 
 
+def zone_shapefile_path(config: StudyConfig) -> Path:
+    """Return where the TLC taxi zone shapefile (a zip archive) is stored."""
+    url = config.sources["taxi_zone_shapefile"]["url"]
+    return config.raw_dir / "taxi_zone_shapefile" / Path(url).name
+
+
+def count_shapes(path: Path) -> int:
+    """Count the zone shapes in a zipped shapefile."""
+    with shapefile.Reader(str(path)) as shapes:
+        return len(shapes)
+
+
+def download_zone_shapefile(config: StudyConfig, session: requests.Session) -> DownloadOutcome:
+    """Download the taxi zone shapefile used for zone centroids."""
+    url = config.sources["taxi_zone_shapefile"]["url"]
+    return ensure_downloaded(
+        config,
+        session,
+        "taxi_zone_shapefile",
+        url,
+        zone_shapefile_path(config),
+        count_shapes,
+        MUST_MATCH,
+    )
+
+
 def download_tlc(config: StudyConfig, session: requests.Session) -> list[DownloadOutcome]:
-    """Download the zone lookup, the yellow taxi months and, if enabled, the HVFHV months."""
-    outcomes = [download_zone_lookup(config, session)]
+    """Download the zone lookup and shapes, the yellow taxi months and, if enabled, HVFHV."""
+    outcomes = [download_zone_lookup(config, session), download_zone_shapefile(config, session)]
     outcomes += download_trip_months(config, session, "yellow_taxi")
     if config.include_high_volume_fhv:
         outcomes += download_trip_months(config, session, "high_volume_fhv")
