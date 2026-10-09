@@ -90,3 +90,44 @@ plan.
 The week labelled 2024-12-30 is absent from the NYSERDA export. It is not imputed
 for evaluation: forecasts whose target week is missing are skipped, and the
 number skipped is reported.
+
+## 2026-10-09: publication lags measured from archived evidence
+
+TLC's "typically with a two-month delay" was checked against Internet Archive
+copies of the TLC page and the files' `Last-Modified` headers for 35 months
+(`docs/evidence/tlc_release_dates.csv`). A rule of "usable from month m + 3" would
+have used December 2025 and June 2026 before they were released, so the primary
+information set uses "usable from the first day of month m + 4". Weather uses a
+7-day lag (documented as 5 days, observed as 7 on 2026-10-09). NYSERDA release
+timing was bounded from archived exports and metadata
+(`docs/evidence/nyserda_release_dates.csv`): recent labels appeared about one
+and a half to three weeks after their date, so lagging the other sources from
+the label date is conservative.
+
+## 2026-10-09: analysis plan edits requested in review, before approval
+
+The author approved `docs/analysis_plan.md` subject to these edits, made before
+it was committed and before any model ran:
+
+- The main fine-grain models do not use the recorded `trip_distance`, which is
+  known only after the trip and largely determines duration. They use
+  booking-time features instead: pickup zone, dropoff zone, and the
+  centroid-to-centroid distance between the zones from the official TLC taxi
+  zone shapefile (added to the manifest). The recorded distance is kept for one
+  sensitivity run, labelled as such.
+- The coarse task models the one-week change in price, not the level, so trees
+  are not limited to the training range; the random walk is a zero-change
+  forecast. A ridge regression learner is added on the same features, with its
+  penalty chosen by a rule stated in the plan on the year before the evaluation
+  period, then frozen. Both learners are reported.
+- The fine task gets a naive baseline below F0: the training median duration for
+  the zone pair and hour of the week, falling back to the zone pair, then the
+  overall median.
+- Effect sizes are reported with 95 percent confidence intervals from a block
+  bootstrap (whole weeks for the coarse task, whole days for the fine task),
+  next to the Diebold-Mariano tests.
+- More evidence on the NYSERDA release lag was gathered (see the entry above).
+- The coarse target is defined as the next published NYSERDA weekly value.
+
+Everything else in the draft was approved as written, including the model
+settings, sample sizes, COVID window and query-latency design.
