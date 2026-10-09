@@ -1,0 +1,15 @@
+kind,captured_utc,archive_url,newest_label,newest_label_out_within_days,next_label,next_label_missing_after_days,rows_updated_utc
+export,2016-12-19T21:34:50+00:00,https://web.archive.org/web/20161219213450/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2016-11-28,21.0,2016-12-05,14.0,
+export,2020-10-27T20:28:13+00:00,https://web.archive.org/web/20201027202813/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2020-09-28,29.0,2020-10-05,22.0,
+export,2021-04-02T12:42:40+00:00,https://web.archive.org/web/20210402124240/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2021-02-22,39.0,2021-03-01,32.0,
+export,2022-12-07T21:54:26+00:00,https://web.archive.org/web/20221207215426/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2022-11-28,9.0,2022-12-05,2.0,
+export,2023-11-17T02:08:53+00:00,https://web.archive.org/web/20231117020853/https://data.ny.gov/api/views/nqur-w4p7/rows.csv,2023-11-06,11.0,2023-11-13,4.0,
+export,2023-11-17T02:09:55+00:00,https://web.archive.org/web/20231117020955/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2023-11-06,11.0,2023-11-13,4.0,
+export,2024-09-27T02:51:39+00:00,https://web.archive.org/web/20240927025139/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2024-09-09,18.0,2024-09-16,11.0,
+export,2024-12-04T02:58:55+00:00,https://web.archive.org/web/20241204025855/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2024-11-18,16.0,2024-11-25,9.0,
+export,2024-12-13T13:03:36+00:00,https://web.archive.org/web/20241213130336/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2024-11-25,18.0,2024-12-02,11.0,
+metadata,2025-02-01T00:37:16+00:00,https://web.archive.org/web/20250201003716/https://data.ny.gov/api/views/nqur-w4p7,,,,,2025-01-31T15:30:42+00:00
+export,2025-02-01T01:38:16+00:00,https://web.archive.org/web/20250201013816/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2025-01-13,19.0,2025-01-20,12.0,
+export,2025-03-17T12:05:15+00:00,https://web.archive.org/web/20250317120515/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2025-03-03,14.0,2025-03-10,7.0,
+export,2026-01-24T22:12:40+00:00,https://web.archive.org/web/20260124221240/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2026-01-05,19.0,2026-01-12,12.0,
+export,2026-04-05T04:04:53+00:00,https://web.archive.org/web/20260405040453/https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD,2026-03-23,13.0,2026-03-30,6.0,
