@@ -73,7 +73,7 @@ def download_region_weather(
     if not destination.exists():
         weather = fetch_weather(session, url, query)
         destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text(json.dumps(weather) + "\n", encoding="utf-8")
+        destination.write_text(json.dumps(weather) + "\n", encoding="utf-8", newline="\n")
 
     record = describe_file(
         destination, SOURCE, url, query, count_weather_days(destination), MUST_MATCH

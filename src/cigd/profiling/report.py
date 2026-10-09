@@ -125,7 +125,7 @@ def write_profile_document(config: StudyConfig, tables: dict[str, pd.DataFrame])
     ]
     document_path = profile_document_path(config)
     document_path.parent.mkdir(parents=True, exist_ok=True)
-    document_path.write_text("\n\n".join(sections) + "\n", encoding="utf-8")
+    document_path.write_text("\n\n".join(sections) + "\n", encoding="utf-8", newline="\n")
     return document_path
 
 
@@ -151,7 +151,9 @@ def run_profile(config: StudyConfig) -> dict[str, Any]:
 
     config.tables_dir.mkdir(parents=True, exist_ok=True)
     for table_name, table in tables.items():
-        table.to_csv(config.tables_dir / f"profile_{table_name}.csv", index=False)
+        table.to_csv(
+            config.tables_dir / f"profile_{table_name}.csv", index=False, lineterminator="\n"
+        )
     document_path = write_profile_document(config, tables)
     logger.info("data profile written to %s", document_path)
 

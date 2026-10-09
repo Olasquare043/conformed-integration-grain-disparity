@@ -121,4 +121,6 @@ def record_stage(
 def write_run_log(run_log: dict[str, Any], path: Path) -> None:
     """Write the run log as indented JSON."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(run_log, indent=2, default=str) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(run_log, indent=2, default=str) + "\n", encoding="utf-8", newline="\n"
+    )

@@ -79,7 +79,7 @@ def download_eia(config: StudyConfig, session: requests.Session) -> list[Downloa
         destination.parent.mkdir(parents=True, exist_ok=True)
         # Only the data rows are kept: the response envelope carries warnings and
         # version strings that would change the checksum without changing the data.
-        destination.write_text(json.dumps(records, indent=1) + "\n", encoding="utf-8")
+        destination.write_text(json.dumps(records, indent=1) + "\n", encoding="utf-8", newline="\n")
         logger.info("downloaded %s (%d rows)", destination.name, len(records))
 
     record = describe_file(
