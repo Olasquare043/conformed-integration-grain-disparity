@@ -22,6 +22,10 @@ read the publisher's own terms before reusing the data.
   column (the Manhattan congestion relief zone toll that started on 5 January
   2025). The pipeline reads all months with a schema union by name, so months
   before 2025 hold NULL in that column.
+- Yellow taxi months from 2017-01 to 2023-12 are downloaded only to count trips
+  per pickup zone per day for the coarse-grain trip-demand features. Each file's
+  checksum and row count go into the manifest, and the file is deleted once it
+  has been counted.
 - NY Open Data publishes a new week every week and can revise earlier weeks.
   The study therefore fixes a `data_cutoff_date` in `config/study.yaml`, filters
   every analysis to it, and compares each download's checksum with the

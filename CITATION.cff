@@ -3,7 +3,9 @@ message: "If you use this software, please cite it as below."
 title: "Conformed Dimensional Integration at Extreme Grain Disparity: Integration Cost and Downstream Model Effect across Two Domains (code and pipeline)"
 type: software
 authors:
-  - name: "Olasquare"
+  - family-names: "Olayinka"
+    given-names: "Saheed Olayemi"
+    orcid: "https://orcid.org/0009-0000-4551-5479"
 version: 0.1.0
 license: MIT
 repository-code: "https://github.com/Olasquare043/conformed-integration-grain-disparity"

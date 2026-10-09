@@ -8,6 +8,10 @@ study:
   # Fine-grain domain window, inclusive, as YYYY-MM.
   trip_first_month: "2024-01"
   trip_last_month: "2025-12"
+  # Earlier months are streamed only to build zone-day trip counts for the
+  # coarse-grain trip-demand features; each raw file is deleted after aggregation.
+  trip_history_first_month: "2017-01"
+  trip_history_last_month: "2023-12"
   # Coarse-grain panel starts with the NYSERDA series (January 2017).
   price_first_week: "2017-01-02"
   # No observation dated after this day is used anywhere in the analysis.
@@ -15,6 +19,8 @@ study:
   data_cutoff_date: "2025-12-31"
   random_seed: 20240101
   include_high_volume_fhv: false
+  # The original EIA level tolerance was calibrated for the full window; see docs/decisions.md.
+  enforce_eia_level_tolerance: true
 
 # Profiles override the study block. "full" is the paper run; "smoke" is a
 # few-minute reviewer check on one month of trips and a short price slice.
@@ -23,14 +29,18 @@ profiles:
   smoke:
     trip_first_month: "2024-01"
     trip_last_month: "2024-01"
+    trip_history_first_month: "2023-12"
+    trip_history_last_month: "2023-12"
     price_first_week: "2023-01-02"
     data_cutoff_date: "2024-03-31"
+    # Fifteen months are too short to estimate the level bias; computed and recorded only.
+    enforce_eia_level_tolerance: false
 
 paths:
-  raw_dir: data/raw
-  # Derived data and results are kept per profile so a smoke run never
-  # overwrites the paper outputs.
-  derived_dir: data/{profile}
+  # Raw downloads go to <data_root>/raw and derived data to <data_root>/<profile>,
+  # so a smoke run never overwrites the paper outputs. Set the environment
+  # variable CIGD_DATA_DIR to keep the data on another drive.
+  data_root: data
   results_dir: results
   smoke_results_dir: results/smoke
   logs_dir: logs
@@ -72,9 +82,24 @@ quality:
     # The NYSERDA state average must track EIA's New York State series.
     max_median_absolute_difference_usd: 0.10
     min_correlation: 0.98
+  # Added 2026-10-09 after the Phase 2 profile (see docs/decisions.md): agreement
+  # of weekly changes at the observed alignment (NYSERDA week w against EIA week
+  # w - 1), with the level bias bounded separately. Enforced in every profile.
+  eia_change_check:
+    alignment_offset_weeks: -1
+    min_change_correlation: 0.75
+    max_absolute_mean_level_bias_usd: 0.15
   price_outliers:
     # A regional weekly price is flagged (not removed) when it moves more than
     # this in one week, or falls outside the plausible range.
     max_weekly_change_usd: 0.30
     plausible_min_usd: 1.00
     plausible_max_usd: 7.00
+  # Rules that remove a trip from fact_trip; each is reported separately.
+  # See sql/warehouse/stg_trip_validity.sql and docs/data_dictionary.md.
+  trip_validity:
+    excluded_vendor_ids: [7]
+    min_duration_seconds: 60
+    max_duration_seconds: 10800
+    max_distance_miles: 100
+    max_average_speed_mph: 80

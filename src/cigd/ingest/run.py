@@ -13,6 +13,7 @@ from cigd.ingest.http import make_session
 from cigd.ingest.nyserda import download_nyserda
 from cigd.ingest.open_meteo import download_open_meteo
 from cigd.ingest.tlc import download_tlc
+from cigd.ingest.trip_history import download_trip_history
 from cigd.logging import get_logger
 
 logger = get_logger(__name__)
@@ -21,6 +22,7 @@ Downloader = Callable[[StudyConfig, requests.Session], list[DownloadOutcome]]
 
 DOWNLOADERS: dict[str, Downloader] = {
     "tlc": download_tlc,
+    "tlc_history": download_trip_history,
     "nyserda_gasoline": download_nyserda,
     "eia_gasoline": download_eia,
     "open_meteo": download_open_meteo,

@@ -14,6 +14,10 @@ logger = get_logger(__name__)
 # every week); it is recorded for provenance but never compared.
 MUST_MATCH = "must_match"
 INFORMATIONAL = "informational"
+# Most files stay on disk. Historical trip months are deleted after they are
+# aggregated, so only their aggregate is kept; their checksum is still recorded.
+STORED_AS_FILE = "file"
+STORED_AS_AGGREGATE_ONLY = "aggregate_only"
 
 
 @dataclass
@@ -29,6 +33,7 @@ class ManifestRecord:
     sha256: str
     row_count: int
     checksum_policy: str
+    stored_locally: str = STORED_AS_FILE
 
 
 MANIFEST_COLUMNS = [field.name for field in fields(ManifestRecord)]
@@ -51,9 +56,9 @@ def read_manifest(manifest_path: Path) -> dict[tuple[str, str], ManifestRecord]:
         rows = list(csv.DictReader(manifest_file))
     records = {}
     for row in rows:
-        record = ManifestRecord(
-            **{**row, "size_bytes": int(row["size_bytes"]), "row_count": int(row["row_count"])}
-        )
+        row["size_bytes"] = int(row["size_bytes"])
+        row["row_count"] = int(row["row_count"])
+        record = ManifestRecord(**row)
         records[(record.source, record.file_name)] = record
     return records
 

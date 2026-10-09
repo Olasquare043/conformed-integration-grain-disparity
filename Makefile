@@ -16,7 +16,7 @@ export QUIET
 CIGD = $(PYTHON) -m cigd --profile $(PROFILE)
 
 .DEFAULT_GOAL := help
-.PHONY: help all smoke check-sources data profile test lint
+.PHONY: help all smoke check-sources data profile warehouse test lint
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-15s %s\n", $$1, $$2}'
@@ -35,6 +35,9 @@ data: ## Download every source and check it against the frozen manifest
 
 profile: ## Profile every source (results/tables/profile_*.csv, docs/data_profile.md)
 	$(CIGD) profile
+
+warehouse: ## Build the DuckDB warehouse: dimensions, facts and aggregates
+	$(CIGD) warehouse
 
 test: ## Run the test suite against the built outputs
 	$(CIGD) test

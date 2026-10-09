@@ -19,6 +19,7 @@ from cigd.ingest.source_check import cached_file, check_all_sources
 from cigd.logging import get_logger, setup_logging, show, stage_banner
 from cigd.profiling.report import run_profile
 from cigd.run_log import record_stage, start_run_log, utc_now_text, write_run_log
+from cigd.warehouse.build import build_warehouse
 
 logger = get_logger(__name__)
 
@@ -60,6 +61,11 @@ def run_profiling(config: StudyConfig, arguments: argparse.Namespace) -> dict[st
     return run_profile(config)
 
 
+def run_warehouse(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Rebuild the warehouse: dimensions, facts and shared-grain aggregates."""
+    return build_warehouse(config)
+
+
 def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
     """Run the pytest suite against this profile's outputs."""
     # Tests read the profile from the environment so they check the run that was just built.
@@ -75,10 +81,11 @@ STAGES: dict[str, StageFunction] = {
     "check-sources": run_check_sources,
     "data": run_data,
     "profile": run_profiling,
+    "warehouse": run_warehouse,
     "test": run_tests,
 }
 # The order "all" runs the stages in. Later stages read what earlier ones wrote.
-PIPELINE_ORDER = ["check-sources", "data", "profile", "test"]
+PIPELINE_ORDER = ["check-sources", "data", "profile", "warehouse", "test"]
 
 
 def set_global_seeds(seed: int) -> None:
@@ -117,7 +124,12 @@ def show_run_summary(run_log: dict[str, Any], config: StudyConfig, log_path: Pat
     table.add_column("seconds", justify="right")
     table.add_column("summary")
     for stage_name, entry in run_log["stages"].items():
-        summary_text = ", ".join(f"{key}={value}" for key, value in entry["summary"].items())
+        # Nested details (such as per-step timings) stay in the run log, not the table.
+        summary_text = ", ".join(
+            f"{key}={value}"
+            for key, value in entry["summary"].items()
+            if not isinstance(value, dict)
+        )
         table.add_row(stage_name, entry["status"], f"{entry['duration_seconds']:.1f}", summary_text)
     show(table)
     show(f"results:  {config.results_dir}")

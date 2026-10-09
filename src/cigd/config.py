@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -12,6 +13,8 @@ import yaml
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 STUDY_CONFIG_PATH = REPOSITORY_ROOT / "config" / "study.yaml"
 PROFILES = ("full", "smoke")
+# Set this to keep data/ on another drive; the default is data/ inside the repository.
+DATA_DIRECTORY_VARIABLE = "CIGD_DATA_DIR"
 
 
 @dataclass(frozen=True)
@@ -21,18 +24,28 @@ class StudyConfig:
     profile: str
     trip_first_month: str
     trip_last_month: str
+    trip_history_first_month: str
+    trip_history_last_month: str
     price_first_week: date
     data_cutoff_date: date
     random_seed: int
     include_high_volume_fhv: bool
-    raw_dir: Path
-    derived_dir: Path
+    enforce_eia_level_tolerance: bool
+    data_root: Path
     results_dir: Path
     logs_dir: Path
     manifest_path: Path
     sources: dict[str, Any]
     quality: dict[str, Any]
     config_hash: str
+
+    @property
+    def raw_dir(self) -> Path:
+        return self.data_root / "raw"
+
+    @property
+    def derived_dir(self) -> Path:
+        return self.data_root / self.profile
 
     @property
     def tables_dir(self) -> Path:
@@ -63,6 +76,14 @@ def hash_settings(settings: dict[str, Any]) -> str:
     return hashlib.sha256(canonical_text.encode("utf-8")).hexdigest()[:16]
 
 
+def resolve_data_root(configured_root: str) -> Path:
+    """Use CIGD_DATA_DIR when set, otherwise the configured folder inside the repository."""
+    override = os.environ.get(DATA_DIRECTORY_VARIABLE, "").strip()
+    if override:
+        return Path(override).resolve()
+    return REPOSITORY_ROOT / configured_root
+
+
 def load_config(profile: str = "full") -> StudyConfig:
     """Resolve the study settings for one profile."""
     if profile not in PROFILES:
@@ -73,6 +94,7 @@ def load_config(profile: str = "full") -> StudyConfig:
     path_settings = raw_settings["paths"]
 
     results_key = "smoke_results_dir" if profile == "smoke" else "results_dir"
+    # The data location is left out of the hash: moving data/ must not change the study.
     resolved_for_hash = {
         "profile": profile,
         "study": study_settings,
@@ -84,12 +106,14 @@ def load_config(profile: str = "full") -> StudyConfig:
         profile=profile,
         trip_first_month=study_settings["trip_first_month"],
         trip_last_month=study_settings["trip_last_month"],
+        trip_history_first_month=study_settings["trip_history_first_month"],
+        trip_history_last_month=study_settings["trip_history_last_month"],
         price_first_week=date.fromisoformat(study_settings["price_first_week"]),
         data_cutoff_date=date.fromisoformat(study_settings["data_cutoff_date"]),
         random_seed=int(study_settings["random_seed"]),
         include_high_volume_fhv=bool(study_settings["include_high_volume_fhv"]),
-        raw_dir=REPOSITORY_ROOT / path_settings["raw_dir"],
-        derived_dir=REPOSITORY_ROOT / path_settings["derived_dir"].format(profile=profile),
+        enforce_eia_level_tolerance=bool(study_settings["enforce_eia_level_tolerance"]),
+        data_root=resolve_data_root(path_settings["data_root"]),
         results_dir=REPOSITORY_ROOT / path_settings[results_key],
         logs_dir=REPOSITORY_ROOT / path_settings["logs_dir"],
         manifest_path=REPOSITORY_ROOT / path_settings["manifest"],

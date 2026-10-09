@@ -6,7 +6,11 @@ import pytest
 from cigd.config import StudyConfig
 from cigd.ingest.eia import read_eia_prices
 from cigd.ingest.nyserda import read_price_panel
-from cigd.profiling.prices import crosscheck_with_eia, list_missing_weeks
+from cigd.profiling.prices import (
+    check_weekly_change_agreement,
+    crosscheck_with_eia,
+    list_missing_weeks,
+)
 from cigd.reference import read_known_price_gaps
 
 pytestmark = pytest.mark.usefixtures("price_sources_ready")
@@ -41,7 +45,17 @@ def test_one_row_per_series_and_week(config: StudyConfig) -> None:
     assert not panel.duplicated(["series_code", "week_start"]).any()
 
 
-def test_state_average_agrees_with_eia(config: StudyConfig) -> None:
+def test_state_average_level_agrees_with_eia(config: StudyConfig) -> None:
+    # The original level tolerance was calibrated for the full window; shorter
+    # windows record it in the profile instead (docs/decisions.md, 2026-10-09).
+    if not config.enforce_eia_level_tolerance:
+        pytest.skip(f"level tolerance recorded, not enforced, for profile {config.profile!r}")
     crosscheck = crosscheck_with_eia(read_price_panel(config), read_eia_prices(config), config)
     tested = crosscheck[crosscheck["held_to_tolerance"]].iloc[0]
     assert tested["within_tolerance"], tested.to_dict()
+
+
+def test_state_average_weekly_changes_agree_with_eia(config: StudyConfig) -> None:
+    panel = read_price_panel(config)
+    change_check = check_weekly_change_agreement(panel, read_eia_prices(config), config)
+    assert change_check["within_tolerance"].iloc[0], change_check.iloc[0].to_dict()

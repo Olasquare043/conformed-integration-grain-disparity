@@ -1,0 +1,2 @@
+nyserda_series,eia_series_id,offset_weeks,weekly_changes_compared,change_correlation,min_change_correlation,mean_level_bias_usd,max_absolute_mean_level_bias_usd,within_tolerance
+new_york_state,EMM_EPMR_PTE_SNY_DPG,-1,466,0.86857,0.75,0.0882,0.15,True

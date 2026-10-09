@@ -29,7 +29,7 @@ def test_snapshot_keeps_weeks_up_to_cutoff_byte_for_byte(tmp_path: Path) -> None
 
 
 def test_changed_export_columns_stop_the_run(tmp_path: Path) -> None:
-    config = replace(load_config("smoke"), raw_dir=tmp_path)
+    config = replace(load_config("smoke"), data_root=tmp_path)
     frozen = snapshot_path(config)
     frozen.parent.mkdir(parents=True)
     frozen.write_text("Date,Some Renamed Column\n01/01/2024,3.00\n", encoding="utf-8")

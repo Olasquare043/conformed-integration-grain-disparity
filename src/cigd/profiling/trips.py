@@ -1,25 +1,13 @@
 """Profile the monthly yellow taxi files: row counts, quality counts and schema drift."""
 
-from pathlib import Path
-
 import duckdb
 import pandas as pd
 import pyarrow.parquet as pq
 
 from cigd.config import StudyConfig
-from cigd.ingest.tlc import months_in_window
+from cigd.ingest.tlc import yellow_taxi_files
 from cigd.logging import make_progress
 from cigd.sql_files import load_sql
-
-
-def yellow_taxi_files(config: StudyConfig) -> dict[str, Path]:
-    """Map each study month to its downloaded yellow taxi file."""
-    url_template = config.sources["yellow_taxi"]["url_template"]
-    files = {}
-    for month in months_in_window(config.trip_first_month, config.trip_last_month):
-        file_name = Path(url_template.format(month=month)).name
-        files[month] = config.raw_dir / "yellow_taxi" / file_name
-    return files
 
 
 def profile_trip_months(config: StudyConfig) -> pd.DataFrame:

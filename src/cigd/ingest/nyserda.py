@@ -95,4 +95,6 @@ def read_price_panel(config: StudyConfig) -> pd.DataFrame:
     panel["week_start"] = pd.to_datetime(panel["week_start"], format=EXPORT_DATE_FORMAT)
     panel["price_usd_per_gallon"] = pd.to_numeric(panel["price_text"])
     panel = panel.drop(columns="price_text")
-    return panel.sort_values(["series_code", "week_start"]).reset_index(drop=True)
+    # The snapshot already stops at the cutoff; this drops weeks before the study window.
+    in_window = panel["week_start"] >= pd.Timestamp(config.price_first_week)
+    return panel[in_window].sort_values(["series_code", "week_start"]).reset_index(drop=True)

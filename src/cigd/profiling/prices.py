@@ -87,7 +87,7 @@ def compare_series(
     """Compare two weekly series after shifting the EIA dates back by offset_weeks."""
     shifted_eia = eia_series.copy()
     shifted_eia.index = shifted_eia.index - pd.Timedelta(weeks=offset_weeks)
-    paired = pd.concat({"nyserda": nyserda_series, "eia": shifted_eia}, axis=1).dropna()
+    paired = pd.concat({"nyserda": nyserda_series, "eia": shifted_eia}, axis=1, sort=True).dropna()
     difference = paired["nyserda"] - paired["eia"]
     return {
         "weeks_compared": len(paired),
@@ -136,3 +136,51 @@ def crosscheck_with_eia(
                 }
             )
     return pd.DataFrame(comparison_rows)
+
+
+def weekly_series(frame: pd.DataFrame, column: str, value: str) -> pd.Series:
+    """Return one price series on a complete Monday grid, so absent weeks are missing values."""
+    rows = frame[frame[column] == value]
+    return rows.set_index("week_start")["price_usd_per_gallon"].sort_index().asfreq("W-MON")
+
+
+def check_weekly_change_agreement(
+    panel: pd.DataFrame, eia_prices: pd.DataFrame, config: StudyConfig
+) -> pd.DataFrame:
+    """Compare weekly price changes at the observed alignment and bound the level bias.
+
+    NYSERDA week w is paired with EIA week w + offset (offset -1 in config), because
+    a NYSERDA Monday describes the week before it. Changes are taken on the full
+    weekly grid, so a missing week never turns into a two-week change.
+    """
+    settings = config.quality["eia_change_check"]
+    offset_weeks = settings["alignment_offset_weeks"]
+    state_average = weekly_series(panel, "series_code", "new_york_state")
+    eia_state = weekly_series(eia_prices, "series_id", EIA_NEW_YORK_STATE)
+    aligned_eia = eia_state.shift(-offset_weeks)
+
+    changes = pd.concat(
+        {"nyserda": state_average.diff(), "eia": aligned_eia.diff()}, axis=1
+    ).dropna()
+    levels = pd.concat({"nyserda": state_average, "eia": aligned_eia}, axis=1).dropna()
+    change_correlation = round(changes["nyserda"].corr(changes["eia"]), 5)
+    mean_level_bias = round((levels["nyserda"] - levels["eia"]).mean(), 4)
+    within_tolerance = (
+        change_correlation >= settings["min_change_correlation"]
+        and abs(mean_level_bias) <= settings["max_absolute_mean_level_bias_usd"]
+    )
+    return pd.DataFrame(
+        [
+            {
+                "nyserda_series": "new_york_state",
+                "eia_series_id": EIA_NEW_YORK_STATE,
+                "offset_weeks": offset_weeks,
+                "weekly_changes_compared": len(changes),
+                "change_correlation": change_correlation,
+                "min_change_correlation": settings["min_change_correlation"],
+                "mean_level_bias_usd": mean_level_bias,
+                "max_absolute_mean_level_bias_usd": settings["max_absolute_mean_level_bias_usd"],
+                "within_tolerance": within_tolerance,
+            }
+        ]
+    )

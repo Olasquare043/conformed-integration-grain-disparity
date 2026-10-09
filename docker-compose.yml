@@ -1,6 +1,7 @@
 # Run the pipeline in the pinned image:
 #   docker compose run --rm pipeline make all
-# The repository is bind-mounted, so data/, results/ and logs/ appear on the host.
+# The repository is bind-mounted, so results/ and logs/ appear on the host.
+# Data goes to ./data, or to CIGD_DATA_DIR on the host when that is set.
 services:
   pipeline:
     build:
@@ -12,6 +13,9 @@ services:
         required: false
     environment:
       QUIET: "${QUIET:-0}"
+      # Inside the container the data folder is always /app/data.
+      CIGD_DATA_DIR: /app/data
     volumes:
       - .:/app
+      - ${CIGD_DATA_DIR:-./data}:/app/data
     working_dir: /app

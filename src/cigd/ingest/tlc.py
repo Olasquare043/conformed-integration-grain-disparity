@@ -18,6 +18,16 @@ def months_in_window(first_month: str, last_month: str) -> list[str]:
     return [str(period) for period in month_periods]
 
 
+def yellow_taxi_files(config: StudyConfig) -> dict[str, Path]:
+    """Map each study month to its downloaded yellow taxi file."""
+    url_template = config.sources["yellow_taxi"]["url_template"]
+    files = {}
+    for month in months_in_window(config.trip_first_month, config.trip_last_month):
+        file_name = Path(url_template.format(month=month)).name
+        files[month] = config.raw_dir / "yellow_taxi" / file_name
+    return files
+
+
 def count_parquet_rows(path: Path) -> int:
     """Read the row count from the Parquet footer without loading any data."""
     return pq.ParquetFile(path).metadata.num_rows

@@ -1,6 +1,7 @@
 """Download one file, describe it, and reconcile it with the manifest."""
 
 import json
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -11,12 +12,19 @@ import requests
 
 from cigd.config import StudyConfig
 from cigd.ingest.http import TIMEOUT_SECONDS
-from cigd.ingest.manifest import ManifestRecord, reconcile_with_manifest, sha256_of_file
+from cigd.ingest.manifest import (
+    STORED_AS_FILE,
+    ManifestRecord,
+    reconcile_with_manifest,
+    sha256_of_file,
+)
 from cigd.logging import get_logger, make_download_progress
 
 logger = get_logger(__name__)
 
 RowCounter = Callable[[Path], int]
+DOWNLOAD_ATTEMPTS = 3
+RETRY_PAUSE_SECONDS = 30
 
 
 @dataclass
@@ -28,25 +36,52 @@ class DownloadOutcome:
     status: str
 
 
-def stream_to_file(
+def stream_once(
     session: requests.Session,
     url: str,
-    destination: Path,
-    request_parameters: dict[str, Any] | None = None,
+    partial_path: Path,
+    request_parameters: dict[str, Any] | None,
 ) -> None:
-    """Stream a URL to disk with a progress bar, renaming into place only when complete."""
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    partial_path = destination.with_name(destination.name + ".part")
+    """Stream a URL into a partial file with a progress bar."""
     with session.get(
         url, params=request_parameters, stream=True, timeout=TIMEOUT_SECONDS
     ) as response:
         response.raise_for_status()
         total_bytes = int(response.headers.get("Content-Length", 0)) or None
         with make_download_progress() as progress, partial_path.open("wb") as file:
-            task = progress.add_task(destination.name, total=total_bytes)
+            task = progress.add_task(partial_path.name, total=total_bytes)
             for chunk in response.iter_content(chunk_size=1024 * 1024):
                 file.write(chunk)
                 progress.advance(task, len(chunk))
+
+
+def stream_to_file(
+    session: requests.Session,
+    url: str,
+    destination: Path,
+    request_parameters: dict[str, Any] | None = None,
+) -> None:
+    """Stream a URL to disk, renaming into place only when complete.
+
+    The session retries failed requests, but not a connection that drops while the
+    body is being read, so the whole download is restarted a few times here.
+    """
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    partial_path = destination.with_name(destination.name + ".part")
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            stream_once(session, url, partial_path, request_parameters)
+            break
+        except (
+            requests.ConnectionError,
+            requests.Timeout,
+            requests.exceptions.ChunkedEncodingError,
+        ) as error:
+            partial_path.unlink(missing_ok=True)
+            if attempt == DOWNLOAD_ATTEMPTS:
+                raise
+            logger.warning("download of %s interrupted (%s); retrying", destination.name, error)
+            time.sleep(RETRY_PAUSE_SECONDS * attempt)
     partial_path.replace(destination)
 
 
@@ -63,6 +98,7 @@ def describe_file(
     recorded_parameters: dict[str, Any],
     row_count: int,
     checksum_policy: str,
+    stored_locally: str = STORED_AS_FILE,
 ) -> ManifestRecord:
     """Build the manifest record for a file already on disk."""
     return ManifestRecord(
@@ -76,6 +112,7 @@ def describe_file(
         sha256=sha256_of_file(path),
         row_count=row_count,
         checksum_policy=checksum_policy,
+        stored_locally=stored_locally,
     )
 
 

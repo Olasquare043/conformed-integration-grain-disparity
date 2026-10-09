@@ -1,0 +1,19 @@
+table,grain,rows
+agg_trip_region_week,"one metro region per Monday-start week of trip demand, rolled up from zones through the region code each zone carries in dim_geography",1412
+agg_trip_zone_day,"one pickup zone per day, counting every published yellow taxi trip from the first history month to the cutoff",754588
+agg_trip_zone_week,"one pickup zone per Monday-start week, rolled up from agg_trip_zone_day through dim_date",118511
+agg_weather_region_week,"one metro region per Monday-start week of weather, rolled up from fact_weather_daily",7552
+audit_trip_validity,"one validity rule (plus ""kept"") per file year",20
+dim_date,"one calendar day, from the weather lead-in to the data cutoff",3300
+dim_geography,"one geography member at one level of the nested hierarchy: zone, borough, metro region, state, PADD and country",298
+fact_fuel_price_weekly,one NYSERDA price series (16 metro regions and the state average) per described week,7971
+fact_trip,one valid yellow taxi trip in the fact window (2024 to 2025),86079843
+fact_weather_daily,"one metro region per day, from Open-Meteo (ERA5) at the region's representative point",52800
+stg_borough_region,"one TLC borough, with the hierarchy it rolls up to (reference/borough_to_region.csv)",8
+stg_fuel_price,loaded from Python (staging),7973
+stg_metro_region,"one NYSERDA metro region, with its weather point (reference/region_coordinates.csv)",16
+stg_trip_validity_threshold,loaded from Python (staging),1
+stg_trip_zone_day,loaded from Python (staging),764663
+stg_us_federal_holiday,loaded from Python (staging),96
+stg_weather,loaded from Python (staging),52800
+stg_zone_lookup,"one TLC taxi zone, as published in the taxi zone lookup",265

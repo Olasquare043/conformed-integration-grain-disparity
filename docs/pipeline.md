@@ -10,7 +10,42 @@ then prints a summary table of stages, durations and outcomes.
 | `check-sources` | Sends one small request to every official source, so an unreachable publisher is reported before a long run | log only |
 | `data` | Downloads every source that is not already on disk, and compares each file with `provenance/manifest.csv` | `data/raw/`, `provenance/manifest.csv` |
 | `profile` | Counts rows, gaps, schema changes and flagged values in every source, and cross-checks NYSERDA against EIA | `results/tables/profile_*.csv`, `docs/data_profile.md` |
+| `warehouse` | Rebuilds the DuckDB warehouse from scratch, one timed SQL step per table | `data/<profile>/warehouse.duckdb`, `results/tables/warehouse_*.csv` |
 | `test` | Runs the pytest suite against this profile's outputs | `results/run_log.json` |
+
+## Where the data lives
+
+By default everything downloaded or derived goes under `data/` in the repository:
+raw files in `data/raw/`, and each profile's warehouse in `data/full/` or
+`data/smoke/`. To keep the data on another drive, set `CIGD_DATA_DIR` to an
+absolute path in `.env` or the environment. Docker Compose mounts that folder at
+`/app/data` inside the container. Moving the data does not change the
+configuration hash, because the location is not part of the study design.
+
+## Trip history streaming
+
+The coarse-grain trip-demand features need trip counts back to 2017, but the
+study keeps raw trip records only for 2024 to 2025. The `tlc_history` downloader
+handles each month from 2017-01 to 2023-12 in turn: it downloads the file, records
+its checksum and row count in the manifest (`stored_locally = aggregate_only`),
+counts trips per pickup zone per day with `sql/staging/zone_day_trip_counts.sql`,
+saves those counts to `data/raw/yellow_taxi_zone_day/`, and deletes the raw file.
+The same SQL counts the 2024 to 2025 months from their kept files during the
+warehouse build, so trip demand means the same thing in every year. A month whose
+counts already exist is not downloaded again, so its checksum is only checked
+when its counts are rebuilt.
+
+## The warehouse
+
+`src/cigd/warehouse/build.py` deletes the old warehouse, loads the
+Python-prepared sources (holidays, validity thresholds, the price snapshot,
+weather and zone-day counts), creates a view over the raw 2024 to 2025 trip
+files, and runs the files in `sql/warehouse/` in the order listed in
+`WAREHOUSE_STEPS`. Each step is timed. The timings, the row counts and the
+warehouse size go to `results/run_log.json` and `results/tables/` as the
+integration-cost record. The views over the raw files are dropped at the end, so
+the finished warehouse opens without the raw data. Tables and columns are
+described in `docs/data_dictionary.md`.
 
 ## Profiles
 

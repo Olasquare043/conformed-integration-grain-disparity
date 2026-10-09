@@ -2,9 +2,20 @@
   "title": "Conformed Dimensional Integration at Extreme Grain Disparity: Integration Cost and Downstream Model Effect across Two Domains (code and pipeline)",
   "upload_type": "software",
   "description": "Reproducible pipeline that downloads NYC TLC trip records, NYSERDA weekly regional gasoline prices, EIA weekly prices and Open-Meteo weather, integrates them through conformed date and geography dimensions, and regenerates every table, figure and number in the accompanying manuscript.",
-  "creators": [{ "name": "Olasquare" }],
+  "creators": [
+    {
+      "name": "Olayinka, Saheed Olayemi",
+      "orcid": "0009-0000-4551-5479"
+    }
+  ],
   "license": "MIT",
-  "keywords": ["dimensional modelling", "conformed dimensions", "data integration", "grain disparity", "reproducibility"],
+  "keywords": [
+    "dimensional modelling",
+    "conformed dimensions",
+    "data integration",
+    "grain disparity",
+    "reproducibility"
+  ],
   "related_identifiers": [
     {
       "identifier": "https://github.com/Olasquare043/conformed-integration-grain-disparity",

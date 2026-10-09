@@ -52,6 +52,9 @@ docker compose run --rm pipeline make smoke
 docker compose run --rm pipeline make all
 ```
 
+To keep the data on another drive, set `CIGD_DATA_DIR` in `.env` to an
+absolute path; both the local and the Docker runs use it.
+
 Add `QUIET=1` to any target to turn off progress bars. Run `make help` to list
 every stage. Each stage can also be run on its own with
 `uv run python -m cigd <stage>`.
@@ -63,8 +66,12 @@ These are estimates and will be replaced with measured figures from
 
 | Run | Download | Disk | Time |
 |---|---|---|---|
-| `make smoke` | about 60 MB | under 1 GB | a few minutes |
-| `make all` | about 1.6 GB | about 6 GB | to be measured |
+| `make smoke` | about 110 MB | under 1 GB | a few minutes |
+| `make all` | about 10 GB (1.5 GB of it kept) | about 8 GB at peak | to be measured |
+
+The full run downloads every yellow taxi month from 2017 to 2025. Months before
+2024 are reduced to daily trip counts per zone and deleted straight away, so only
+one of them is on disk at a time.
 
 ## Verifying a run against the frozen snapshot
 
@@ -83,6 +90,8 @@ library versions and machine your outputs came from.
 config/study.yaml        study window, cutoff, seeds, source URLs
 src/cigd/                pipeline code; cli.py is the single entry point
   ingest/                downloads and the provenance manifest
+  profiling/             data profile of every source
+  warehouse/             staging and the warehouse build
 sql/                     warehouse SQL, one transformation per file
 reference/               versioned mapping CSVs (zone to region, region coordinates)
 tests/                   pytest suite (grain, integrity, leakage, reconciliation)

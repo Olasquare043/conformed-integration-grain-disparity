@@ -27,3 +27,21 @@ Every week without a price in the NYSERDA panel, with the reason. `series_code`
 the panel has a gap that is not listed here, so no gap can go unnoticed. Gaps
 are never filled in the raw data; how the models treat them is set in
 `docs/analysis_plan.md`.
+
+## borough_to_region.csv
+
+The rule that places every TLC taxi zone in the nested geography hierarchy
+(zone, borough, metro region, state, PADD, country). A zone inherits everything
+above it from its borough in the TLC zone lookup, so the mapping is stated once
+per borough, with the reason in the `rule` column:
+
+- The five New York City boroughs roll up to the New York City metro region,
+  New York State, PADD 1B and the United States.
+- EWR (zone 1, Newark Airport) is in New Jersey: it sits outside the 16 New York
+  metro regions but inside PADD 1B and the United States.
+- Unknown (zone 264) and N/A (zone 265, "Outside of NYC") map to an explicit
+  Unknown member at every level, so their trips keep a valid key.
+
+The 15 metro regions outside New York City come from `region_coordinates.csv`
+and exist in the dimension even though no taxi trip maps to them. The tests fail
+if a borough in the TLC lookup has no row here, or if a row here is never used.

@@ -1,0 +1,9 @@
+borough_name,borough_code,region_code,region_name,state_code,state_name,padd_code,padd_name,country_code,country_name,rule
+Bronx,bronx,new_york_city,New York City,NY,New York State,PADD_1B,Central Atlantic (PADD 1B),US,United States,Borough of New York City: rolls up to the New York City metro region.
+Brooklyn,brooklyn,new_york_city,New York City,NY,New York State,PADD_1B,Central Atlantic (PADD 1B),US,United States,Borough of New York City: rolls up to the New York City metro region.
+Manhattan,manhattan,new_york_city,New York City,NY,New York State,PADD_1B,Central Atlantic (PADD 1B),US,United States,Borough of New York City: rolls up to the New York City metro region.
+Queens,queens,new_york_city,New York City,NY,New York State,PADD_1B,Central Atlantic (PADD 1B),US,United States,Borough of New York City: rolls up to the New York City metro region.
+Staten Island,staten_island,new_york_city,New York City,NY,New York State,PADD_1B,Central Atlantic (PADD 1B),US,United States,Borough of New York City: rolls up to the New York City metro region.
+EWR,ewr,new_jersey_outside_ny_regions,New Jersey (outside the NY metro regions),NJ,New Jersey,PADD_1B,Central Atlantic (PADD 1B),US,United States,Newark Airport is in New Jersey: outside the 16 New York metro regions but inside PADD 1B and the United States.
+Unknown,unknown,unknown,Unknown,unknown,Unknown,unknown,Unknown,unknown,Unknown,TLC zone 264 has no known location: Unknown member at every level.
+N/A,not_applicable,unknown,Unknown,unknown,Unknown,unknown,Unknown,unknown,Unknown,TLC zone 265 (Outside of NYC) has no known location: Unknown member at every level.
