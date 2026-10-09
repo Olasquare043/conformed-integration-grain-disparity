@@ -2,12 +2,17 @@
 
 import os
 from dataclasses import dataclass
+from pathlib import Path
 
 import requests
 
 from cigd.config import StudyConfig
+from cigd.ingest.eia import eia_path
 from cigd.ingest.http import TIMEOUT_SECONDS, make_session
+from cigd.ingest.nyserda import export_path
+from cigd.ingest.open_meteo import weather_path
 from cigd.logging import get_logger
+from cigd.reference import read_regions
 
 logger = get_logger(__name__)
 
@@ -73,6 +78,22 @@ def check_open_meteo(session: requests.Session, api_url: str) -> SourceCheck:
     }
     response = session.get(api_url, params=parameters, timeout=TIMEOUT_SECONDS)
     return SourceCheck("open_meteo", api_url, str(response.status_code), "one day")
+
+
+def cached_file(config: StudyConfig, source: str) -> Path:
+    """Return a file whose presence shows the source was already downloaded for this profile."""
+    first_trip_url = config.sources["yellow_taxi"]["url_template"].format(
+        month=config.trip_first_month
+    )
+    first_region = read_regions()["region_code"].iloc[0]
+    cached_files = {
+        "yellow_taxi": config.raw_dir / "yellow_taxi" / Path(first_trip_url).name,
+        "taxi_zone_lookup": config.raw_dir / "taxi_zone_lookup" / "taxi_zone_lookup.csv",
+        "nyserda_gasoline": export_path(config),
+        "eia_gasoline": eia_path(config),
+        "open_meteo": weather_path(config, first_region),
+    }
+    return cached_files[source]
 
 
 def check_all_sources(config: StudyConfig) -> list[SourceCheck]:

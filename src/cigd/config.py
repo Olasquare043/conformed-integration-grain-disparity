@@ -31,6 +31,7 @@ class StudyConfig:
     logs_dir: Path
     manifest_path: Path
     sources: dict[str, Any]
+    quality: dict[str, Any]
     config_hash: str
 
     @property
@@ -76,6 +77,7 @@ def load_config(profile: str = "full") -> StudyConfig:
         "profile": profile,
         "study": study_settings,
         "sources": raw_settings["sources"],
+        "quality": raw_settings["quality"],
     }
 
     return StudyConfig(
@@ -92,5 +94,6 @@ def load_config(profile: str = "full") -> StudyConfig:
         logs_dir=REPOSITORY_ROOT / path_settings["logs_dir"],
         manifest_path=REPOSITORY_ROOT / path_settings["manifest"],
         sources=raw_settings["sources"],
+        quality=raw_settings["quality"],
         config_hash=hash_settings(resolved_for_hash),
     )

@@ -16,7 +16,7 @@ export QUIET
 CIGD = $(PYTHON) -m cigd --profile $(PROFILE)
 
 .DEFAULT_GOAL := help
-.PHONY: help all smoke check-sources data test lint
+.PHONY: help all smoke check-sources data profile test lint
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-15s %s\n", $$1, $$2}'
@@ -30,11 +30,14 @@ smoke: ## Run every stage on the tiny smoke sample
 check-sources: ## Confirm every official source answers
 	$(CIGD) check-sources
 
+data: ## Download every source and check it against the frozen manifest
+	$(CIGD) data
+
+profile: ## Profile every source (results/tables/profile_*.csv, docs/data_profile.md)
+	$(CIGD) profile
+
 test: ## Run the test suite against the built outputs
 	$(CIGD) test
 
 lint: ## Run ruff, nbstripout and the other pre-commit hooks on every file
 	uv run --frozen pre-commit run --all-files
-
-data: ## Download every source and check it against the frozen manifest
-	$(CIGD) data

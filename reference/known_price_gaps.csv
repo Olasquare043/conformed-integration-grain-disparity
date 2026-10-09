@@ -1,0 +1,4 @@
+series_code,week_start,explanation
+batavia,2017-01-02,Blank in the NYSERDA export as published; Batavia prices start on 2017-01-16.
+batavia,2017-01-09,Blank in the NYSERDA export as published; Batavia prices start on 2017-01-16.
+all,2024-12-30,Week absent from the NYSERDA export as published (no row for any series).

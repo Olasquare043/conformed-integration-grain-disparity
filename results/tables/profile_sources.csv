@@ -1,0 +1,5 @@
+source,grain,units,rows,first,last
+yellow_taxi,one trip,24 monthly files,89892322,2002-12-31 16:46:07,2026-06-26 23:53:12
+nyserda_gasoline,one series per week,17 series,7971,2017-01-02,2025-12-29
+eia_gasoline,one series per week,2 series,940,2017-01-02,2025-12-29
+open_meteo,one region per day,16 regions,52800,2016-12-19,2025-12-31

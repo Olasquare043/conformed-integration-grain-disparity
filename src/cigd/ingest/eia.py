@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
 import requests
 
 from cigd.config import StudyConfig
@@ -58,12 +59,18 @@ def count_json_records(path: Path) -> int:
     return len(json.loads(path.read_text(encoding="utf-8")))
 
 
+def eia_path(config: StudyConfig) -> Path:
+    """Return where the EIA series for the study window are stored."""
+    first_week = config.price_first_week.isoformat()
+    cutoff = config.data_cutoff_date.isoformat()
+    return config.raw_dir / SOURCE / f"eia_weekly_regular_{first_week}_{cutoff}.json"
+
+
 def download_eia(config: StudyConfig, session: requests.Session) -> list[DownloadOutcome]:
     """Download the EIA series once and record them in the manifest."""
     url = config.sources[SOURCE]["api_url"]
     query = eia_query(config)
-    file_name = f"eia_weekly_regular_{query['start']}_{query['end']}.json"
-    destination = config.raw_dir / SOURCE / file_name
+    destination = eia_path(config)
 
     if destination.exists():
         logger.info("cached     %s", destination.name)
@@ -80,3 +87,16 @@ def download_eia(config: StudyConfig, session: requests.Session) -> list[Downloa
     )
     status = reconcile_with_manifest(config.manifest_path, record)
     return [DownloadOutcome(destination, record, status)]
+
+
+def read_eia_prices(config: StudyConfig) -> pd.DataFrame:
+    """Return one row per EIA series per week, with the price as a number."""
+    records = pd.DataFrame(json.loads(eia_path(config).read_text(encoding="utf-8")))
+    return pd.DataFrame(
+        {
+            "week_start": pd.to_datetime(records["period"]),
+            "series_id": records["series"],
+            "area_name": records["series"].map(config.sources[SOURCE]["series"]),
+            "price_usd_per_gallon": pd.to_numeric(records["value"]),
+        }
+    )

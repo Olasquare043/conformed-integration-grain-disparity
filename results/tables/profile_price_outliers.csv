@@ -1,0 +1,18 @@
+series_code,week_start,price_usd_per_gallon,weekly_change_usd,reason
+albany,2022-03-14,4.43,0.39999999999999947,large weekly move
+batavia,2022-03-14,4.36,0.40000000000000036,large weekly move
+binghamton,2022-03-14,4.42,0.3799999999999999,large weekly move
+buffalo,2022-03-14,4.38,0.4099999999999997,large weekly move
+dutchess,2022-03-14,4.52,0.4499999999999993,large weekly move
+elmira,2022-03-14,4.39,0.4199999999999995,large weekly move
+glens_falls,2022-03-14,4.46,0.40000000000000036,large weekly move
+ithaca,2022-03-14,4.42,0.41999999999999993,large weekly move
+kingston,2022-03-14,4.41,0.41999999999999993,large weekly move
+nassau,2022-03-14,4.44,0.4400000000000004,large weekly move
+new_york_city,2022-03-14,4.48,0.4400000000000004,large weekly move
+new_york_state,2022-03-14,4.44,0.4200000000000008,large weekly move
+rochester,2022-03-14,4.4,0.39000000000000057,large weekly move
+syracuse,2022-03-14,4.41,0.41999999999999993,large weekly move
+utica,2022-03-14,4.4,0.40000000000000036,large weekly move
+watertown,2022-03-14,4.4,0.39000000000000057,large weekly move
+white_plains,2022-03-14,4.68,0.5999999999999996,large weekly move

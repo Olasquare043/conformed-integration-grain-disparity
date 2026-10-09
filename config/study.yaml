@@ -65,3 +65,16 @@ sources:
       - precipitation_sum
       - snowfall_sum
       - wind_speed_10m_max
+
+# Data quality thresholds, fixed before the data were profiled.
+quality:
+  eia_crosscheck:
+    # The NYSERDA state average must track EIA's New York State series.
+    max_median_absolute_difference_usd: 0.10
+    min_correlation: 0.98
+  price_outliers:
+    # A regional weekly price is flagged (not removed) when it moves more than
+    # this in one week, or falls outside the plausible range.
+    max_weekly_change_usd: 0.30
+    plausible_min_usd: 1.00
+    plausible_max_usd: 7.00

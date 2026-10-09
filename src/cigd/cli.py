@@ -15,8 +15,9 @@ from rich.table import Table
 
 from cigd.config import PROFILES, REPOSITORY_ROOT, StudyConfig, load_config
 from cigd.ingest.run import DOWNLOADERS, download_sources
-from cigd.ingest.source_check import check_all_sources
+from cigd.ingest.source_check import cached_file, check_all_sources
 from cigd.logging import get_logger, setup_logging, show, stage_banner
+from cigd.profiling.report import run_profile
 from cigd.run_log import record_stage, start_run_log, utc_now_text, write_run_log
 
 logger = get_logger(__name__)
@@ -37,18 +38,26 @@ class OutcomeCounter:
 
 
 def run_check_sources(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
-    """Probe every official source and fail if any required one is unreachable."""
+    """Probe every official source; fail only if one is unreachable and not yet downloaded."""
     checks = check_all_sources(config)
     unreachable = [check.source for check in checks if check.status not in ("200", "skipped")]
-    if unreachable:
-        raise RuntimeError(f"Sources not reachable from this machine: {unreachable}")
-    return {"sources_checked": len(checks), "unreachable": 0}
+    blocking = [source for source in unreachable if not cached_file(config, source).exists()]
+    for source in sorted(set(unreachable) - set(blocking)):
+        logger.warning("%s is unreachable from here, but its files are already on disk", source)
+    if blocking:
+        raise RuntimeError(f"Sources not reachable and not downloaded yet: {blocking}")
+    return {"sources_checked": len(checks), "unreachable_but_cached": len(unreachable)}
 
 
 def run_data(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
     """Download every source (or the one named with --source) and check the manifest."""
     selected = [arguments.source] if arguments.source else None
     return download_sources(config, selected)
+
+
+def run_profiling(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Profile every source and write the profile tables and document."""
+    return run_profile(config)
 
 
 def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
@@ -65,10 +74,11 @@ def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, A
 STAGES: dict[str, StageFunction] = {
     "check-sources": run_check_sources,
     "data": run_data,
+    "profile": run_profiling,
     "test": run_tests,
 }
 # The order "all" runs the stages in. Later stages read what earlier ones wrote.
-PIPELINE_ORDER = ["check-sources", "data", "test"]
+PIPELINE_ORDER = ["check-sources", "data", "profile", "test"]
 
 
 def set_global_seeds(seed: int) -> None:
