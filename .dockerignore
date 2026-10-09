@@ -1,0 +1,6 @@
+.git
+.venv
+data
+logs
+results
+.env

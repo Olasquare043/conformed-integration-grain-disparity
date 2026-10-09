@@ -1,0 +1,17 @@
+# Run the pipeline in the pinned image:
+#   docker compose run --rm pipeline make all
+# The repository is bind-mounted, so data/, results/ and logs/ appear on the host.
+services:
+  pipeline:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: cigd-pipeline:0.1.0
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      QUIET: "${QUIET:-0}"
+    volumes:
+      - .:/app
+    working_dir: /app

@@ -1,0 +1,64 @@
+# Study configuration. Every window, cutoff, seed, path and source URL used by
+# the pipeline is set here, so a reviewer can see the whole study design in one file.
+
+study:
+  title: >-
+    Conformed Dimensional Integration at Extreme Grain Disparity:
+    Integration Cost and Downstream Model Effect across Two Domains
+  # Fine-grain domain window, inclusive, as YYYY-MM.
+  trip_first_month: "2024-01"
+  trip_last_month: "2025-12"
+  # Coarse-grain panel starts with the NYSERDA series (January 2017).
+  price_first_week: "2017-01-02"
+  # No observation dated after this day is used anywhere in the analysis.
+  # NY Open Data keeps publishing new weeks, so this freezes the snapshot.
+  data_cutoff_date: "2025-12-31"
+  random_seed: 20240101
+  include_high_volume_fhv: false
+
+# Profiles override the study block. "full" is the paper run; "smoke" is a
+# few-minute reviewer check on one month of trips and a short price slice.
+profiles:
+  full: {}
+  smoke:
+    trip_first_month: "2024-01"
+    trip_last_month: "2024-01"
+    price_first_week: "2023-01-02"
+    data_cutoff_date: "2024-03-31"
+
+paths:
+  raw_dir: data/raw
+  # Derived data and results are kept per profile so a smoke run never
+  # overwrites the paper outputs.
+  derived_dir: data/{profile}
+  results_dir: results
+  smoke_results_dir: results/smoke
+  logs_dir: logs
+  manifest: provenance/manifest.csv
+
+sources:
+  yellow_taxi:
+    url_template: https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_{month}.parquet
+  high_volume_fhv:
+    url_template: https://d37ci6vzurychx.cloudfront.net/trip-data/fhvhv_tripdata_{month}.parquet
+  taxi_zone_lookup:
+    url: https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv
+  nyserda_gasoline:
+    dataset_id: nqur-w4p7
+    export_url: https://data.ny.gov/api/views/nqur-w4p7/rows.csv?accessType=DOWNLOAD
+  eia_gasoline:
+    api_url: https://api.eia.gov/v2/petroleum/pri/gnd/data/
+    # Weekly regular gasoline, all formulations, retail, dollars per gallon.
+    series:
+      EMM_EPMR_PTE_SNY_DPG: New York State
+      EMM_EPMR_PTE_R1Y_DPG: PADD 1B
+  open_meteo:
+    api_url: https://archive-api.open-meteo.com/v1/archive
+    timezone: America/New_York
+    daily_variables:
+      - temperature_2m_max
+      - temperature_2m_min
+      - temperature_2m_mean
+      - precipitation_sum
+      - snowfall_sum
+      - wind_speed_10m_max

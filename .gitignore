@@ -1,0 +1,15 @@
+# Secrets
+.env
+
+# Raw and derived data are downloaded and rebuilt, never committed.
+data/
+
+# Run logs, smoke outputs and local environments
+logs/
+results/smoke/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/

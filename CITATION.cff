@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Conformed Dimensional Integration at Extreme Grain Disparity: Integration Cost and Downstream Model Effect across Two Domains (code and pipeline)"
+type: software
+authors:
+  - name: "Olasquare"
+version: 0.1.0
+license: MIT
+repository-code: "https://github.com/Olasquare043/conformed-integration-grain-disparity"
+keywords:
+  - dimensional modelling
+  - conformed dimensions
+  - data integration
+  - grain disparity
+  - reproducibility

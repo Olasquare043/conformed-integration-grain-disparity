@@ -1,0 +1,40 @@
+# Lint, then run the whole pipeline on the smoke sample. The smoke run ends
+# with the test stage, so every push also runs the full test suite.
+name: smoke
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.10.8"
+
+      - name: Install the locked environment
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run --frozen pre-commit run --all-files
+
+      - name: Smoke run
+        run: make smoke QUIET=1
+        env:
+          EIA_API_KEY: ${{ secrets.EIA_API_KEY }}
+
+      - name: Keep the logs and smoke results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: smoke-run
+          path: |
+            logs/
+            results/smoke/
+          if-no-files-found: ignore

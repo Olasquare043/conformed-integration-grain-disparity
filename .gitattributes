@@ -1,0 +1,6 @@
+# LF everywhere, so the Makefile and scripts behave the same on Windows hosts and in Docker.
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.parquet binary
+*.duckdb binary
