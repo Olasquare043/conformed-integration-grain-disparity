@@ -11,10 +11,12 @@ from rich.console import Console
 from rich.logging import RichHandler
 from rich.progress import (
     BarColumn,
+    DownloadColumn,
     MofNCompleteColumn,
     Progress,
     TextColumn,
     TimeElapsedColumn,
+    TransferSpeedColumn,
 )
 from rich.table import Table
 
@@ -83,6 +85,19 @@ def make_progress() -> Progress:
         BarColumn(),
         MofNCompleteColumn(),
         TimeElapsedColumn(),
+        console=console,
+        disable=_quiet,
+        transient=False,
+    )
+
+
+def make_download_progress() -> Progress:
+    """Return a byte-level progress bar for downloads, switched off when quiet."""
+    return Progress(
+        TextColumn("{task.description}"),
+        BarColumn(),
+        DownloadColumn(),
+        TransferSpeedColumn(),
         console=console,
         disable=_quiet,
         transient=False,

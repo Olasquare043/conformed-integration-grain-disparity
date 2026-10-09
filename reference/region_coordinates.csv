@@ -1,0 +1,17 @@
+region_code,region_name,nyserda_column,place_name,county,geonames_id,latitude,longitude
+albany,Albany,albany_average_gal,Albany,Albany,5106834,42.65258,-73.75623
+batavia,Batavia,batavia_average_gal,Batavia,Genesee,5108093,42.99812,-78.18752
+binghamton,Binghamton,binghamton_average_gal,Binghamton,Broome,5109177,42.09869,-75.91797
+buffalo,Buffalo,buffalo_average_gal,Buffalo,Erie,5110629,42.88645,-78.87837
+dutchess,Dutchess,dutchess_average_gal,Poughkeepsie,Dutchess,5132143,41.70037,-73.92097
+elmira,Elmira,elmira_average_gal,Elmira,Chemung,5116497,42.0898,-76.80773
+glens_falls,Glens Falls,glens_falls_average_gal,Glens Falls,Warren,5118693,43.30952,-73.64401
+ithaca,Ithaca,ithaca_average_gal,Ithaca,Tompkins,5122432,42.44063,-76.49661
+kingston,Kingston,kingston_average_gal,Kingston,Ulster,5123477,41.92704,-73.99736
+nassau,Nassau,nassau_average_gal,Mineola,Nassau,5127134,40.74927,-73.64068
+new_york_city,New York City,new_york_city_average_gal,New York,New York,5128581,40.71427,-74.00597
+rochester,Rochester,rochester_average_gal,Rochester,Monroe,5134086,43.15478,-77.61556
+syracuse,Syracuse,syracuse_average_gal,Syracuse,Onondaga,5140405,43.04812,-76.14742
+utica,Utica,utica_average_gal,Utica,Oneida,5142056,43.1009,-75.23266
+watertown,Watertown,watertown_average_gal,Watertown,Jefferson,5143396,43.97478,-75.91076
+white_plains,White Plains,white_plains_average_gal,White Plains,Westchester,5144336,41.03399,-73.76291

@@ -55,6 +55,9 @@ sources:
   open_meteo:
     api_url: https://archive-api.open-meteo.com/v1/archive
     timezone: America/New_York
+    # Pinned reanalysis model. The default "best_match" can switch models upstream,
+    # which would silently change the weather series between runs.
+    model: era5
     daily_variables:
       - temperature_2m_max
       - temperature_2m_min

@@ -14,13 +14,14 @@ from dotenv import load_dotenv
 from rich.table import Table
 
 from cigd.config import PROFILES, REPOSITORY_ROOT, StudyConfig, load_config
+from cigd.ingest.run import DOWNLOADERS, download_sources
 from cigd.ingest.source_check import check_all_sources
 from cigd.logging import get_logger, setup_logging, show, stage_banner
 from cigd.run_log import record_stage, start_run_log, utc_now_text, write_run_log
 
 logger = get_logger(__name__)
 
-StageFunction = Callable[[StudyConfig], dict[str, Any]]
+StageFunction = Callable[[StudyConfig, argparse.Namespace], dict[str, Any]]
 
 
 class OutcomeCounter:
@@ -35,7 +36,7 @@ class OutcomeCounter:
             self.counts[report.outcome] += 1
 
 
-def run_check_sources(config: StudyConfig) -> dict[str, Any]:
+def run_check_sources(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
     """Probe every official source and fail if any required one is unreachable."""
     checks = check_all_sources(config)
     unreachable = [check.source for check in checks if check.status not in ("200", "skipped")]
@@ -44,7 +45,13 @@ def run_check_sources(config: StudyConfig) -> dict[str, Any]:
     return {"sources_checked": len(checks), "unreachable": 0}
 
 
-def run_tests(config: StudyConfig) -> dict[str, Any]:
+def run_data(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Download every source (or the one named with --source) and check the manifest."""
+    selected = [arguments.source] if arguments.source else None
+    return download_sources(config, selected)
+
+
+def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
     """Run the pytest suite against this profile's outputs."""
     # Tests read the profile from the environment so they check the run that was just built.
     os.environ["CIGD_PROFILE"] = config.profile
@@ -57,10 +64,11 @@ def run_tests(config: StudyConfig) -> dict[str, Any]:
 
 STAGES: dict[str, StageFunction] = {
     "check-sources": run_check_sources,
+    "data": run_data,
     "test": run_tests,
 }
 # The order "all" runs the stages in. Later stages read what earlier ones wrote.
-PIPELINE_ORDER = ["check-sources", "test"]
+PIPELINE_ORDER = ["check-sources", "data", "test"]
 
 
 def set_global_seeds(seed: int) -> None:
@@ -69,7 +77,12 @@ def set_global_seeds(seed: int) -> None:
     np.random.seed(seed)
 
 
-def run_stage(stage_name: str, config: StudyConfig, run_log: dict[str, Any]) -> None:
+def run_stage(
+    stage_name: str,
+    config: StudyConfig,
+    arguments: argparse.Namespace,
+    run_log: dict[str, Any],
+) -> None:
     """Run one stage inside a banner, record its timing and write the run log."""
     started_utc = utc_now_text()
     started = time.perf_counter()
@@ -77,7 +90,7 @@ def run_stage(stage_name: str, config: StudyConfig, run_log: dict[str, Any]) -> 
     summary: dict[str, Any] = {}
     try:
         with stage_banner(stage_name):
-            summary = STAGES[stage_name](config)
+            summary = STAGES[stage_name](config, arguments)
         status = "ok"
         logger.info("%s summary: %s", stage_name, summary)
     finally:
@@ -108,6 +121,7 @@ def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("stage", choices=[*STAGES, "all"])
     parser.add_argument("--profile", choices=PROFILES, default="full")
     parser.add_argument("--quiet", action="store_true", help="turn off progress bars")
+    parser.add_argument("--source", choices=list(DOWNLOADERS), help="data stage: one source only")
     return parser.parse_args(argv)
 
 
@@ -125,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
     stage_names = PIPELINE_ORDER if is_full_run else [arguments.stage]
     try:
         for stage_name in stage_names:
-            run_stage(stage_name, config, run_log)
+            run_stage(stage_name, config, arguments, run_log)
     except Exception:
         logger.exception("Pipeline stopped")
         show_run_summary(run_log, config, log_path)

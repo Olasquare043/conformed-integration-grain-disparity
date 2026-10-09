@@ -16,7 +16,7 @@ export QUIET
 CIGD = $(PYTHON) -m cigd --profile $(PROFILE)
 
 .DEFAULT_GOAL := help
-.PHONY: help all smoke check-sources test lint
+.PHONY: help all smoke check-sources data test lint
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-15s %s\n", $$1, $$2}'
@@ -35,3 +35,6 @@ test: ## Run the test suite against the built outputs
 
 lint: ## Run ruff, nbstripout and the other pre-commit hooks on every file
 	uv run --frozen pre-commit run --all-files
+
+data: ## Download every source and check it against the frozen manifest
+	$(CIGD) data

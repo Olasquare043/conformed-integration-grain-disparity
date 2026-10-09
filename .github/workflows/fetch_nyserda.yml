@@ -1,0 +1,36 @@
+# data.ny.gov refuses requests from some networks (see DATA_SOURCES.md). This
+# manual workflow runs the same download code on a GitHub-hosted runner, from
+# the official URL, and returns the file with its manifest row as a short-lived
+# artifact. Place the files in data/raw/ and provenance/ and run `make data`,
+# which verifies the checksum.
+name: fetch-nyserda
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.10.8"
+
+      - name: Install the locked environment
+        run: uv sync --frozen
+
+      - name: Download the NYSERDA panel from data.ny.gov
+        run: uv run --frozen python -m cigd --quiet data --source nyserda_gasoline
+
+      - name: Return the file and its manifest row
+        uses: actions/upload-artifact@v6
+        with:
+          name: nyserda-gasoline
+          retention-days: 3
+          path: |
+            data/raw/nyserda_gasoline/
+            provenance/manifest.csv
+            logs/
