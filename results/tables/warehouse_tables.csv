@@ -16,4 +16,5 @@ stg_trip_validity_threshold,loaded from Python (staging),1
 stg_trip_zone_day,loaded from Python (staging),764663
 stg_us_federal_holiday,loaded from Python (staging),96
 stg_weather,loaded from Python (staging),52800
+stg_zone_centroid,loaded from Python (staging),263
 stg_zone_lookup,"one TLC taxi zone, as published in the taxi zone lookup",265

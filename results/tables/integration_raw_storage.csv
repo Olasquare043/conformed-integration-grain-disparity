@@ -1,0 +1,8 @@
+source,stored_locally,files,bytes,rows
+eia_gasoline,file,2,418003,1096
+nyserda_gasoline,file,3,132525,1367
+open_meteo,file,32,2933566,61760
+taxi_zone_lookup,file,1,12331,265
+taxi_zone_shapefile,file,1,1022574,263
+yellow_taxi,aggregate_only,84,6407659513,434489882
+yellow_taxi,file,24,1522975012,89892322

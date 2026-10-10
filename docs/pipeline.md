@@ -11,7 +11,11 @@ then prints a summary table of stages, durations and outcomes.
 | `data` | Downloads every source that is not already on disk, and compares each file with `provenance/manifest.csv` | `data/raw/`, `provenance/manifest.csv` |
 | `profile` | Counts rows, gaps, schema changes and flagged values in every source, and cross-checks NYSERDA against EIA | `results/tables/profile_*.csv`, `docs/data_profile.md` |
 | `warehouse` | Rebuilds the DuckDB warehouse from scratch, one timed SQL step per table | `data/<profile>/warehouse.duckdb`, `results/tables/warehouse_*.csv` |
-| `test` | Runs the pytest suite against this profile's outputs | `results/run_log.json` |
+| `experiments` | Runs the pre-registered experiments in `docs/analysis_plan.md`: integration cost, the coarse-grain price forecasts and the fine-grain trip-duration models (`--experiment` runs one) | `results/tables/integration_*.csv`, `coarse_*.csv`, `fine_*.csv`; every forecast in `data/<profile>/experiments/` |
+| `test` | Runs the pytest suite against this profile's outputs, including the leakage tests and (on smoke) the determinism rerun | `results/run_log.json` |
+| `figures` | Draws every paper figure from the result tables | `results/figures/*.png` (300 dpi) and `*.pdf` |
+| `paper-numbers` | Collects every number the paper quotes from the outputs; computes nothing new | `results/paper_numbers.json` |
+| `notebooks` | Executes the five notebooks top to bottom with papermill and exports HTML; any error fails the stage | `results/notebooks/*.html` |
 
 ## Where the data lives
 
@@ -49,8 +53,11 @@ described in `docs/data_dictionary.md`.
 
 ## Profiles
 
-`full` is the paper run. `smoke` uses one month of trips and a short slice of the
-price panel, so a reviewer can check the whole pipeline in a few minutes. Smoke
+`full` is the paper run. `smoke` uses five months of trips (2024-01 to 2024-05),
+one history month and a short slice of the price panel, so a reviewer can check
+the whole pipeline in a few minutes. Its experiments use smaller samples, short
+periods and 50 trees instead of the paper settings (`profiles.smoke.experiments`
+in `config/study.yaml`); no smoke number is reported. Smoke
 outputs go to `data/smoke/` and `results/smoke/`, so they never overwrite the
 paper outputs. Raw downloads in `data/raw/` are shared between profiles.
 
@@ -87,3 +94,23 @@ same messages, with timestamps, in `logs/run_<UTC timestamp>.log`. `QUIET=1`
 turns off progress bars. `results/run_log.json` records the Git commit and
 whether the tree had uncommitted changes, the configuration hash, library
 versions, machine details, and each stage's start, end, duration and summary.
+
+## Experiments
+
+The experiment code follows `docs/analysis_plan.md` section by section:
+
+- `src/cigd/features/information_sets.py` holds the publication-lag rules of both
+  information sets, used by the features and by the leakage tests alike.
+- `src/cigd/features/coarse.py` and `fine.py` build the features through the
+  conformed dimensions (`sql/features/`), keeping the date each input came from,
+  so the leakage tests can check it.
+- `src/cigd/models/learners.py` has LightGBM (fixed, deterministic settings),
+  ridge regression and the naive median baseline.
+- `src/cigd/evaluation/` has the metrics, the Diebold-Mariano test with the
+  Harvey, Leybourne and Newbold correction and Newey-West variance, Holm
+  adjustment, the minimum detectable difference and the block bootstrap.
+- `src/cigd/experiments/` runs each experiment and returns its result tables.
+
+The coarse-grain leakage test rebuilds the features from data cut to exactly what
+had been published at a sample of origins and requires every feature to be
+unchanged.

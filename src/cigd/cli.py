@@ -15,10 +15,13 @@ from rich.table import Table
 
 from cigd.config import PROFILES, REPOSITORY_ROOT, StudyConfig, load_config
 from cigd.experiments.run import EXPERIMENT_NAMES, run_experiments
+from cigd.figures.run import draw_figures
 from cigd.ingest.run import DOWNLOADERS, download_sources
 from cigd.ingest.source_check import cached_file, check_all_sources
 from cigd.logging import get_logger, setup_logging, show, stage_banner
 from cigd.profiling.report import run_profile
+from cigd.reporting.notebooks import execute_notebooks
+from cigd.reporting.paper_numbers import write_paper_numbers
 from cigd.run_log import record_stage, start_run_log, utc_now_text, write_run_log
 from cigd.warehouse.build import build_warehouse
 
@@ -32,11 +35,17 @@ class OutcomeCounter:
 
     def __init__(self) -> None:
         self.counts = {"passed": 0, "failed": 0, "skipped": 0}
+        self.counts_by_file: dict[str, dict[str, int]] = {}
 
     def pytest_runtest_logreport(self, report: pytest.TestReport) -> None:
         """Count each test once, using its call phase (or setup, if setup failed or skipped)."""
         if report.when == "call" or (report.when == "setup" and report.outcome != "passed"):
             self.counts[report.outcome] += 1
+            test_file = report.nodeid.split("::")[0].removeprefix("tests/")
+            file_counts = self.counts_by_file.setdefault(
+                test_file, {"passed": 0, "failed": 0, "skipped": 0}
+            )
+            file_counts[report.outcome] += 1
 
 
 def run_check_sources(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
@@ -72,6 +81,21 @@ def run_experiment_stage(config: StudyConfig, arguments: argparse.Namespace) -> 
     return run_experiments(config, arguments.experiment)
 
 
+def run_figures(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Draw every paper figure from the result tables."""
+    return draw_figures(config)
+
+
+def run_paper_numbers(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Collect every number the paper quotes into results/paper_numbers.json."""
+    return write_paper_numbers(config)
+
+
+def run_notebooks(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Execute every notebook headlessly and export it as HTML."""
+    return execute_notebooks(config)
+
+
 def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
     """Run the pytest suite against this profile's outputs."""
     # Tests read the profile from the environment so they check the run that was just built.
@@ -80,7 +104,7 @@ def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, A
     exit_code = pytest.main([str(REPOSITORY_ROOT / "tests"), "-q"], plugins=[counter])
     if exit_code not in (pytest.ExitCode.OK, pytest.ExitCode.NO_TESTS_COLLECTED):
         raise RuntimeError(f"pytest failed with exit code {int(exit_code)}: {counter.counts}")
-    return counter.counts
+    return {**counter.counts, "by_file": counter.counts_by_file}
 
 
 STAGES: dict[str, StageFunction] = {
@@ -90,9 +114,22 @@ STAGES: dict[str, StageFunction] = {
     "warehouse": run_warehouse,
     "experiments": run_experiment_stage,
     "test": run_tests,
+    "figures": run_figures,
+    "paper-numbers": run_paper_numbers,
+    "notebooks": run_notebooks,
 }
 # The order "all" runs the stages in. Later stages read what earlier ones wrote.
-PIPELINE_ORDER = ["check-sources", "data", "profile", "warehouse", "experiments", "test"]
+PIPELINE_ORDER = [
+    "check-sources",
+    "data",
+    "profile",
+    "warehouse",
+    "experiments",
+    "test",
+    "figures",
+    "paper-numbers",
+    "notebooks",
+]
 
 
 def set_global_seeds(seed: int) -> None:

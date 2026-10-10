@@ -1,0 +1,10 @@
+measure,value
+valid_trips,86079843.0
+valid_nyc_trips,86079247.0
+fact_window_weeks,105.0
+price_rows_in_fact_window,1751.0
+published_nyc_trips_all_years,518242089.0
+nyc_region_weeks_all_years,471.0
+valid_nyc_trips_per_nyc_region_week,819802.3523809523
+valid_trips_per_price_row,49160.39006282124
+published_nyc_trips_per_nyc_region_week_all_years,1100301.6751592357

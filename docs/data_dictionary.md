@@ -55,6 +55,7 @@ region, state, PADD and country. The rule is in `reference/borough_to_region.csv
 | `zone_id` | TLC LocationID (zones only) |
 | `borough_code`, `region_code`, `state_code`, `padd_code`, `country_code` | Codes of the member and its ancestors |
 | `is_nyserda_region` | True for the 16 NYSERDA metro regions |
+| `centroid_x_feet`, `centroid_y_feet` | Zone centroid from the TLC taxi zone shapefile, in NAD83 New York State Plane (Long Island) US survey feet; empty for zones 264 and 265 and above zone level |
 
 Members outside the 16 regions: `new_jersey_outside_ny_regions` (Newark Airport,
 in New Jersey and PADD 1B), and an `unknown` member at every level for TLC zones
@@ -139,6 +140,7 @@ left out.
 |---|---|
 | `stg_zone_lookup`, `stg_borough_region`, `stg_metro_region` | The TLC zone lookup and the two reference CSVs |
 | `stg_us_federal_holiday` | Holidays used by `dim_date` |
+| `stg_zone_centroid` | One centroid per taxi zone from the TLC shapefile (a zone drawn as several shapes is merged first) |
 | `stg_trip_validity_threshold` | The validity thresholds from config, as one row |
 | `stg_fuel_price`, `stg_weather` | Tidy NYSERDA snapshot and weather downloads |
 | `stg_trip_zone_day` | Zone-day trip counts for every month, as counted from each file (history months from their kept aggregates) |

@@ -16,7 +16,7 @@ export QUIET
 CIGD = $(PYTHON) -m cigd --profile $(PROFILE)
 
 .DEFAULT_GOAL := help
-.PHONY: help all smoke check-sources data profile warehouse experiments test lint
+.PHONY: help all smoke check-sources data profile warehouse experiments test figures paper-numbers notebooks lint
 
 help: ## List the available targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  %-15s %s\n", $$1, $$2}'
@@ -44,6 +44,15 @@ experiments: ## Run the pre-registered experiments (integration cost, coarse, fi
 
 test: ## Run the test suite against the built outputs
 	$(CIGD) test
+
+figures: ## Draw every paper figure (results/figures/, PNG and PDF)
+	$(CIGD) figures
+
+paper-numbers: ## Write every number the paper quotes to results/paper_numbers.json
+	$(CIGD) paper-numbers
+
+notebooks: ## Execute every notebook headlessly and export HTML to results/notebooks/
+	$(CIGD) notebooks
 
 lint: ## Run ruff, nbstripout and the other pre-commit hooks on every file
 	uv run --frozen pre-commit run --all-files
