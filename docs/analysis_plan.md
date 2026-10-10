@@ -445,4 +445,8 @@ at 300 dpi and PDF), and every number quoted in the paper to
 
 | Date | Change | Reason |
 |---|---|---|
-| (none yet) | | |
+| 2026-10-10 | Added an exploratory comparison of C2 against C1 (the weather increment) for the coarse task, both learners, all regions, with bootstrap intervals and raw DM p-values: `results/tables/coarse_exploratory_comparisons.csv`. It is outside every registered Holm family and has no win criterion. | The registered ladder tests C3 against C2 and each model against the random walk, but never the step from C1 to C2, which is the weather part of the integration question. Added after the main results were seen, so it is post hoc and reported as such. |
+| 2026-10-10 | Wrote per-region Diebold-Mariano tests against the random walk to `results/tables/coarse_region_comparisons.csv` (raw p-values, no win criterion). | Section 7 promises them; they were computed from the stored forecasts rather than refitting. No change of design. |
+| 2026-10-10 | Limitation recorded, no change of design: F1 (calendar) features come from the pickup timestamp alone, so F0 omits them by choice. The F0 to F1 gain is not a cross-grain integration effect; only weather (F2) and fuel price (F3) cross the grain. | Needed to read the fine-grain results correctly. |
+| 2026-10-10 | Limitation recorded, no change of design: F3 uses the NYSERDA label dated on or before the pickup day. Labels were published about 11 to 19 days after their date (section 3.1), so the primary information set gives fuel price more recent information than a real forecaster would have had. | The fuel result is therefore an upper bound on what a real-time user could gain. |
+| 2026-10-10 | Limitation recorded, no change of design: wins of C3 against the random walk on New York City come mostly from the lag features shared with C1 and C2; the effect attributable to trip demand is the C3 against C2 comparison. | Prevents a misreading of the NYC wins. |

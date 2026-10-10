@@ -8,6 +8,7 @@ import pandas as pd
 from cigd.config import StudyConfig
 from cigd.evaluation.comparisons import add_holm_and_wins, compare_forecasts, paired_errors
 from cigd.evaluation.statistics import (
+    diebold_mariano,
     mean_absolute_error,
     mean_absolute_percentage_error,
     root_mean_squared_error,
@@ -282,6 +283,74 @@ def region_win_table(forecasts: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def region_comparison_table(forecasts: pd.DataFrame) -> pd.DataFrame:
+    """Test each model against the random walk in each region (plan section 7).
+
+    Reported for every region but not part of the win criteria, so p-values are raw.
+    """
+    rows = []
+    for (information_set, run), group in forecasts.groupby(["information_set", "run"]):
+        for planned in planned_comparisons():
+            if planned["family"] != "all_regions":
+                continue
+            for region_code, region in group.groupby("region_code"):
+                paired = paired_errors(
+                    model_errors(region, planned["model"], planned["learner"]),
+                    model_errors(region, planned["comparator"], planned["comparator_learner"]),
+                    FORECAST_KEYS,
+                )
+                differences = paired["error_model"].abs() - paired["error_comparator"].abs()
+                test = diebold_mariano(differences.to_numpy())
+                rows.append(
+                    {
+                        "information_set": information_set,
+                        "run": run,
+                        "model": planned["model"],
+                        "learner": planned["learner"],
+                        "region_code": region_code,
+                        "forecasts": len(paired),
+                        "mae_model": mean_absolute_error(paired["error_model"].to_numpy()),
+                        "mae_random_walk": mean_absolute_error(
+                            paired["error_comparator"].to_numpy()
+                        ),
+                        "dm_statistic_absolute": test["dm_statistic"],
+                        "p_value_absolute": test["p_value"],
+                    }
+                )
+    return pd.DataFrame(rows)
+
+
+def exploratory_comparison_table(forecasts: pd.DataFrame, config: StudyConfig) -> pd.DataFrame:
+    """Compare C2 with C1 (the weather increment), per learner; exploratory, not registered.
+
+    Added after the results were first seen (docs/analysis_plan.md change log, 2026-10-10),
+    so it is outside the Holm families and carries no win.
+    """
+    rows = []
+    for (information_set, run), group in forecasts.groupby(["information_set", "run"]):
+        for learner in LEARNERS:
+            paired = paired_errors(
+                model_errors(group, "C2", learner),
+                model_errors(group, "C1", learner),
+                FORECAST_KEYS,
+            )
+            result = compare_forecasts(
+                paired, "target_week", config.experiments["bootstrap_resamples"], config.random_seed
+            )
+            rows.append(
+                {
+                    "information_set": information_set,
+                    "run": run,
+                    "model": "C2",
+                    "learner": learner,
+                    "comparator": "C1",
+                    "scope": "all_regions",
+                    **result,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def skipped_forecast_table(panel: pd.DataFrame, config: StudyConfig) -> pd.DataFrame:
     """Count, per region, the evaluation target weeks with no forecast (no target or origin)."""
     first, last = (timestamp(day) for day in config.experiments["coarse"]["evaluation_targets"])
@@ -325,6 +394,8 @@ def run_coarse_task(config: StudyConfig) -> tuple[dict[str, pd.DataFrame], pd.Da
         "coarse_accuracy": accuracy_table(forecasts),
         "coarse_comparisons": comparison_table(forecasts, config),
         "coarse_region_wins": region_win_table(forecasts),
+        "coarse_region_comparisons": region_comparison_table(forecasts),
+        "coarse_exploratory_comparisons": exploratory_comparison_table(forecasts, config),
         "coarse_ridge_alphas": pd.concat(alpha_frames, ignore_index=True),
         "coarse_skipped_forecasts": skipped_forecast_table(panels[INFORMATION_SETS[0]], config),
         "coarse_origins": pd.concat(origin_frames, ignore_index=True),

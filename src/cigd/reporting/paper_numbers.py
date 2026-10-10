@@ -9,10 +9,12 @@ under "machine_dependent".
 import json
 from typing import Any
 
+import duckdb
 import pandas as pd
 
 from cigd.config import REPOSITORY_ROOT, StudyConfig
 from cigd.ingest.manifest import read_manifest
+from cigd.sql_files import load_sql
 
 DECIMALS = 6
 EVIDENCE_DIR = REPOSITORY_ROOT / "docs" / "evidence"
@@ -91,13 +93,45 @@ def evidence_numbers() -> dict[str, Any]:
     release_days = (tlc["released_by"] - month_end).dt.days
     nyserda = pd.read_csv(EVIDENCE_DIR / "nyserda_release_dates.csv")
     exports = nyserda[nyserda["kind"] == "export"]
+    recent_exports = exports[exports["captured_utc"] >= "2023-01-01"]
     return {
+        "nyserda_newest_label_out_within_days_min_2023_on": int(
+            recent_exports["newest_label_out_within_days"].min()
+        ),
+        "nyserda_newest_label_out_within_days_max_2023_on": int(
+            recent_exports["newest_label_out_within_days"].max()
+        ),
+        "nyserda_next_label_missing_after_days_min_2022_on": int(
+            exports[exports["captured_utc"] >= "2022-01-01"]["next_label_missing_after_days"].min()
+        ),
+        "nyserda_next_label_missing_after_days_max_2022_on": int(
+            exports[exports["captured_utc"] >= "2022-01-01"]["next_label_missing_after_days"].max()
+        ),
         "tlc_months_checked": len(tlc),
         "tlc_median_days_to_release": rounded(float(release_days.median())),
         "tlc_max_days_to_release": int(release_days.max()),
         "tlc_months_late_under_m_plus_3": int((tlc["rule_m_plus_3"] != "released in time").sum()),
         "tlc_months_late_under_m_plus_4": int((tlc["rule_m_plus_4"] != "released in time").sum()),
         "nyserda_archived_exports": len(exports),
+    }
+
+
+def demand_numbers(config: StudyConfig) -> list[dict[str, Any]]:
+    """NYC weekly trip demand by year (the COVID numbers quoted in the plan)."""
+    with duckdb.connect(str(config.warehouse_path), read_only=True) as connection:
+        by_year = connection.execute(load_sql("experiments/nyc_demand_by_year.sql")).df()
+    return records(by_year)
+
+
+def test_numbers(config: StudyConfig) -> dict[str, Any]:
+    """Outcome counts of the test stage, in total and per test file (conformance, leakage...)."""
+    run_log = json.loads(config.run_log_path.read_text(encoding="utf-8"))
+    summary = run_log["stages"]["test"]["summary"]
+    return {
+        "passed": summary["passed"],
+        "failed": summary["failed"],
+        "skipped": summary["skipped"],
+        "by_file": summary["by_file"],
     }
 
 
@@ -110,6 +144,8 @@ def coarse_numbers(config: StudyConfig) -> dict[str, Any]:
         "pooled_accuracy": records(pooled),
         "comparisons": records(read_table(config, "coarse_comparisons")),
         "regions_beating_random_walk": records(read_table(config, "coarse_region_wins")),
+        "region_comparisons": records(read_table(config, "coarse_region_comparisons")),
+        "exploratory_comparisons": records(read_table(config, "coarse_exploratory_comparisons")),
         "ridge_alphas_chosen": records(
             alphas[alphas["chosen"]][["information_set", "rung", "alpha"]]
         ),
@@ -148,6 +184,8 @@ def write_paper_numbers(config: StudyConfig) -> dict[str, Any]:
         "data": data_numbers(config),
         "trip_validity": validity_numbers(config),
         "warehouse": warehouse_numbers(config),
+        "nyc_demand_by_year": demand_numbers(config),
+        "tests": test_numbers(config),
         "publication_lag_evidence": evidence_numbers(),
         "coarse_task": coarse_numbers(config),
         "fine_task": fine_numbers(config),

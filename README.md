@@ -61,13 +61,20 @@ every stage. Each stage can also be run on its own with
 
 ## Runtime and disk space
 
-These are estimates and will be replaced with measured figures from
-`results/run_log.json` once the full study has run.
+Measured on one Windows 11 laptop with 8 logical CPUs and 16 GB of RAM
+(`results/run_log.json` records the machine of every run). Your times will
+differ, and the download time depends on your network.
 
 | Run | Download | Disk | Time |
 |---|---|---|---|
-| `make smoke` | about 110 MB | under 1 GB | a few minutes |
-| `make all` | about 10 GB (1.5 GB of it kept) | about 8 GB at peak | to be measured |
+| `make smoke` | about 110 MB | about 0.4 GB | about 8 minutes |
+| `make all` | about 7.9 GB, of which 6.4 GB is streamed and deleted | about 4 GB kept (1.5 GB raw, 2.1 GB warehouse), a little more while running | about 6.5 hours of computing, plus the download |
+
+Most of the time is the fine-grain experiment (about 5.5 hours: 240 LightGBM
+fits on up to several million trips each). The warehouse builds in about 3
+minutes, the integration-cost experiment takes about 9 minutes and the
+coarse-grain experiment about 15. The 84 historical months took about two hours to download and
+count on the development network.
 
 The full run downloads every yellow taxi month from 2017 to 2025. Months before
 2024 are reduced to daily trip counts per zone and deleted straight away, so only

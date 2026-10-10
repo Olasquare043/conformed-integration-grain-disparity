@@ -22,6 +22,7 @@ from cigd.logging import get_logger, setup_logging, show, stage_banner
 from cigd.profiling.report import run_profile
 from cigd.reporting.notebooks import execute_notebooks
 from cigd.reporting.paper_numbers import write_paper_numbers
+from cigd.reporting.verify import verify_results
 from cigd.run_log import record_stage, start_run_log, utc_now_text, write_run_log
 from cigd.warehouse.build import build_warehouse
 
@@ -96,6 +97,11 @@ def run_notebooks(config: StudyConfig, arguments: argparse.Namespace) -> dict[st
     return execute_notebooks(config)
 
 
+def run_verify(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
+    """Check the rebuilt results against a committed git reference (default HEAD)."""
+    return verify_results(config, arguments.reference)
+
+
 def run_tests(config: StudyConfig, arguments: argparse.Namespace) -> dict[str, Any]:
     """Run the pytest suite against this profile's outputs."""
     # Tests read the profile from the environment so they check the run that was just built.
@@ -117,6 +123,7 @@ STAGES: dict[str, StageFunction] = {
     "figures": run_figures,
     "paper-numbers": run_paper_numbers,
     "notebooks": run_notebooks,
+    "verify": run_verify,
 }
 # The order "all" runs the stages in. Later stages read what earlier ones wrote.
 PIPELINE_ORDER = [
@@ -188,6 +195,9 @@ def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--profile", choices=PROFILES, default="full")
     parser.add_argument("--quiet", action="store_true", help="turn off progress bars")
     parser.add_argument("--source", choices=list(DOWNLOADERS), help="data stage: one source only")
+    parser.add_argument(
+        "--reference", default="HEAD", help="verify stage: git reference to compare with"
+    )
     parser.add_argument(
         "--experiment", choices=EXPERIMENT_NAMES, help="experiments stage: one experiment only"
     )
