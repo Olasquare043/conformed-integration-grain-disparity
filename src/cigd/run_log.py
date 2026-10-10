@@ -71,6 +71,17 @@ def describe_machine() -> dict[str, Any]:
     }
 
 
+def peak_memory_mb() -> float:
+    """Return the peak memory this process has used so far, in megabytes."""
+    memory = psutil.Process().memory_info()
+    peak_bytes = getattr(memory, "peak_wset", None)  # Windows
+    if peak_bytes is None:
+        import resource
+
+        peak_bytes = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * 1024  # Linux, in KB
+    return round(peak_bytes / 1024**2)
+
+
 def utc_now_text() -> str:
     """Return the current UTC time as an ISO 8601 string."""
     return datetime.now(UTC).isoformat(timespec="seconds")
@@ -114,6 +125,7 @@ def record_stage(
         "ended_utc": utc_now_text(),
         "duration_seconds": round(duration_seconds, 3),
         "status": status,
+        "peak_memory_mb": peak_memory_mb(),
         "summary": summary,
     }
 

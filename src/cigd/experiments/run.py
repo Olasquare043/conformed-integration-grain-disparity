@@ -47,9 +47,8 @@ def run_coarse(config: StudyConfig) -> dict[str, Any]:
 
 def run_fine(config: StudyConfig) -> dict[str, Any]:
     """Run the fine-grain experiment and write its tables and predictions."""
-    tables, predictions = run_fine_task(config)
+    tables = run_fine_task(config)
     write_tables(tables, config)
-    write_forecasts(predictions, "fine_predictions", config)
     return fine_summary(tables)
 
 

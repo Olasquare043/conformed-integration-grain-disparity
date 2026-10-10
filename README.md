@@ -61,6 +61,11 @@ every stage. Each stage can also be run on its own with
 
 ## Runtime and disk space
 
+The fine-grain experiment needs about 7 GB of memory when run natively. Give
+Docker at least 8 GB (a container capped at 8 GB was killed before the experiment
+was changed to write its predictions as it goes, and `results/run_log.json` now
+records each stage's peak memory).
+
 Measured on one Windows 11 laptop with 8 logical CPUs and 16 GB of RAM
 (`results/run_log.json` records the machine of every run). Your times will
 differ, and the download time depends on your network.

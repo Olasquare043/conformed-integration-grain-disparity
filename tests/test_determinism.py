@@ -18,14 +18,20 @@ def as_csv_text(table: pd.DataFrame) -> str:
     return buffer.getvalue()
 
 
-@pytest.mark.parametrize("run_task", [run_coarse_task, run_fine_task], ids=["coarse", "fine"])
+def run_coarse_tables(config: StudyConfig) -> dict[str, pd.DataFrame]:
+    """Run the coarse experiment and return only its result tables."""
+    tables, _ = run_coarse_task(config)
+    return tables
+
+
+@pytest.mark.parametrize("run_tables", [run_coarse_tables, run_fine_task], ids=["coarse", "fine"])
 def test_rerunning_an_experiment_reproduces_its_tables(
-    config: StudyConfig, run_task: Callable
+    config: StudyConfig, run_tables: Callable[[StudyConfig], dict[str, pd.DataFrame]]
 ) -> None:
     # A full rerun takes hours, so the reproducibility check runs on the smoke profile.
     if config.profile != "smoke":
         pytest.skip("rerun check runs on the smoke profile")
-    tables, _ = run_task(config)
+    tables = run_tables(config)
     for name, table in tables.items():
         written = (config.tables_dir / f"{name}.csv").read_text(encoding="utf-8")
         assert as_csv_text(table) == written, name

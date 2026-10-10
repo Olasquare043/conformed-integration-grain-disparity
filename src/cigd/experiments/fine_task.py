@@ -1,9 +1,13 @@
 """Fine-grain experiment: trip duration, one origin per test month (plan section 4)."""
 
+from contextlib import ExitStack
+from pathlib import Path
 from typing import Any
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from cigd.config import StudyConfig
 from cigd.evaluation.comparisons import add_holm_and_wins, compare_forecasts, paired_errors
@@ -161,28 +165,47 @@ def comparison_table(predictions: pd.DataFrame, config: StudyConfig) -> pd.DataF
     return add_holm_and_wins(pd.DataFrame(rows), ["run", "information_set"])
 
 
-def run_fine_task(config: StudyConfig) -> tuple[dict[str, pd.DataFrame], pd.DataFrame]:
-    """Run the fine-grain experiment and return its result tables and all predictions."""
+def fine_predictions_path(config: StudyConfig) -> Path:
+    """Return where every fine-grain prediction is kept (too large for results/)."""
+    return config.derived_dir / "experiments" / "fine_predictions.parquet"
+
+
+def run_fine_task(config: StudyConfig) -> dict[str, pd.DataFrame]:
+    """Run the fine-grain experiment and return its result tables.
+
+    One run and information set is held in memory at a time (about 4.6 million
+    predictions); its predictions are then appended to Parquet and dropped. Holding
+    all 21 million at once needs more memory than an 8 GB container has.
+    """
     sample = build_fine_sample(config)
     logger.info("fine-grain sample: %d trips", len(sample))
-    frames, origins = [], []
-    for run in RUNS:
-        for information_set in INFORMATION_SETS:
-            run_frames, run_origins = run_predictions(sample, run, information_set, config)
-            for frame in run_frames:
-                frame["run"] = run
-                frame["information_set"] = information_set
-            frames += run_frames
-            origins += run_origins
-
-    predictions = pd.concat(frames, ignore_index=True)
-    predictions["error"] = predictions["log_duration"] - predictions["prediction"]
-    tables = {
-        "fine_accuracy": accuracy_table(predictions),
-        "fine_comparisons": comparison_table(predictions, config),
+    path = fine_predictions_path(config)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    accuracy_parts, comparison_parts, origins = [], [], []
+    # The writer is created from the first batch's schema, so it is opened inside the stack.
+    with ExitStack() as stack:
+        writer = None
+        for run in RUNS:
+            for information_set in INFORMATION_SETS:
+                frames, run_origins = run_predictions(sample, run, information_set, config)
+                origins += run_origins
+                predictions = pd.concat(frames, ignore_index=True)
+                del frames
+                predictions["run"] = run
+                predictions["information_set"] = information_set
+                predictions["error"] = predictions["log_duration"] - predictions["prediction"]
+                accuracy_parts.append(accuracy_table(predictions))
+                comparison_parts.append(comparison_table(predictions, config))
+                batch = pa.Table.from_pandas(predictions, preserve_index=False)
+                del predictions
+                if writer is None:
+                    writer = stack.enter_context(pq.ParquetWriter(path, batch.schema))
+                writer.write_table(batch)
+    return {
+        "fine_accuracy": pd.concat(accuracy_parts, ignore_index=True),
+        "fine_comparisons": pd.concat(comparison_parts, ignore_index=True),
         "fine_origins": pd.DataFrame(origins),
     }
-    return tables, predictions
 
 
 def fine_summary(tables: dict[str, Any]) -> dict[str, Any]:

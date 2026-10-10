@@ -2,8 +2,9 @@
 
 What "match" means is fixed here, before any rebuild:
 
-- Exact: data profiles, warehouse row counts, validity counts, grain ratios, raw
-  sizes from the manifest, and every non-numeric value (names, flags, wins).
+- Exact: data profiles (and docs/data_profile.md), warehouse row counts, validity
+  counts, grain ratios, raw sizes from the manifest, and every non-numeric value
+  (names, flags, wins).
 - Numeric model results (accuracy, error, p-values, bootstrap intervals) must agree
   to a relative tolerance, because LightGBM and linear algebra libraries can differ
   in the last digits across platforms.
@@ -103,12 +104,27 @@ def compare_paper_numbers(path: Path, reference: str, root: Path) -> str:
     return "match" if compare_values(old, new, tolerant=True) else "differs"
 
 
+def compare_text_file(path: Path, reference: str) -> str:
+    """Compare a generated text document exactly with its committed copy."""
+    committed = committed_text(reference, path.relative_to(REPOSITORY_ROOT).as_posix())
+    if committed is None:
+        return "no committed copy"
+    # Git may convert line endings on Windows checkouts; the text itself must match.
+    current = path.read_text(encoding="utf-8")
+    same = committed.splitlines() == current.splitlines()
+    return "match" if same else "differs"
+
+
 def verify_results(config: StudyConfig, reference: str = "HEAD") -> dict[str, Any]:
     """Compare every result table and paper_numbers.json with the committed copies."""
     outcomes: dict[str, str] = {}
     for path in sorted(config.tables_dir.glob("*.csv")):
         if path.stem not in SKIPPED_TABLES:
             outcomes[path.name] = compare_table(path, reference, REPOSITORY_ROOT)
+    if config.profile == "full":
+        # Includes the configuration hash, so a stale document is caught.
+        data_profile = REPOSITORY_ROOT / "docs" / "data_profile.md"
+        outcomes["docs/data_profile.md"] = compare_text_file(data_profile, reference)
     numbers_path = config.results_dir / "paper_numbers.json"
     outcomes[numbers_path.name] = compare_paper_numbers(numbers_path, reference, REPOSITORY_ROOT)
 
