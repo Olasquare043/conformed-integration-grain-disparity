@@ -14,6 +14,7 @@ import pandas as pd
 
 from cigd.config import REPOSITORY_ROOT, StudyConfig
 from cigd.ingest.manifest import read_manifest
+from cigd.run_log import latest_stage_entry
 from cigd.sql_files import load_sql
 
 DECIMALS = 6
@@ -125,8 +126,10 @@ def demand_numbers(config: StudyConfig) -> list[dict[str, Any]]:
 
 def test_numbers(config: StudyConfig) -> dict[str, Any]:
     """Outcome counts of the test stage, in total and per test file (conformance, leakage...)."""
-    run_log = json.loads(config.run_log_path.read_text(encoding="utf-8"))
-    summary = run_log["stages"]["test"]["summary"]
+    entry = latest_stage_entry(config, "test")
+    if entry is None:
+        raise RuntimeError("No test stage has been run; run make test first.")
+    summary = entry["summary"]
     return {
         "passed": summary["passed"],
         "failed": summary["failed"],

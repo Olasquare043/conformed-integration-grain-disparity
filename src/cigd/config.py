@@ -58,7 +58,13 @@ class StudyConfig:
 
     @property
     def run_log_path(self) -> Path:
+        """The run log of a full run (make all); the committed record of a reproduced run."""
         return self.results_dir / "run_log.json"
+
+    @property
+    def partial_run_log_path(self) -> Path:
+        """Where stages run on their own write their log, so they never overwrite run_log.json."""
+        return self.results_dir / "run_log_partial.json"
 
     @property
     def warehouse_path(self) -> Path:

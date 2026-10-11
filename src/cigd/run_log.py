@@ -1,4 +1,9 @@
-"""Write results/run_log.json: code version, environment, machine and per-stage timings."""
+"""Write the run log: code version, environment, machine and per-stage timings.
+
+Only a full run (all stages in one process) writes results/run_log.json. A stage run on
+its own writes results/run_log_partial.json, so inspecting or re-running one stage can
+never overwrite the record of a full run.
+"""
 
 import json
 import platform
@@ -94,9 +99,24 @@ def read_run_log(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def start_run_log(config: StudyConfig, reset: bool) -> dict[str, Any]:
-    """Refresh the run header, keeping earlier stage entries unless this is a full run."""
-    run_log = {} if reset else read_run_log(config.run_log_path)
+def active_run_log_path(config: StudyConfig, full_run: bool) -> Path:
+    """Return the log file a run writes: run_log.json for a full run, else the partial log."""
+    return config.run_log_path if full_run else config.partial_run_log_path
+
+
+def latest_stage_entry(config: StudyConfig, stage_name: str) -> dict[str, Any] | None:
+    """Return the most recently finished entry for a stage from either log, or None."""
+    entries = []
+    for path in (config.run_log_path, config.partial_run_log_path):
+        entry = read_run_log(path).get("stages", {}).get(stage_name)
+        if entry is not None:
+            entries.append(entry)
+    return max(entries, key=lambda entry: entry["ended_utc"], default=None)
+
+
+def start_run_log(config: StudyConfig, full_run: bool) -> dict[str, Any]:
+    """Refresh the run header; a full run starts a fresh log, a partial one adds to its own."""
+    run_log = {} if full_run else read_run_log(active_run_log_path(config, full_run))
     run_log.update(
         {
             "profile": config.profile,

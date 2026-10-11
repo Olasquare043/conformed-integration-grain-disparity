@@ -23,7 +23,13 @@ from cigd.profiling.report import run_profile
 from cigd.reporting.notebooks import execute_notebooks
 from cigd.reporting.paper_numbers import write_paper_numbers
 from cigd.reporting.verify import verify_results
-from cigd.run_log import record_stage, start_run_log, utc_now_text, write_run_log
+from cigd.run_log import (
+    active_run_log_path,
+    record_stage,
+    start_run_log,
+    utc_now_text,
+    write_run_log,
+)
 from cigd.warehouse.build import build_warehouse
 
 logger = get_logger(__name__)
@@ -150,6 +156,7 @@ def run_stage(
     config: StudyConfig,
     arguments: argparse.Namespace,
     run_log: dict[str, Any],
+    run_log_path: Path,
 ) -> None:
     """Run one stage inside a banner, record its timing and write the run log."""
     started_utc = utc_now_text()
@@ -164,10 +171,12 @@ def run_stage(
     finally:
         duration_seconds = time.perf_counter() - started
         record_stage(run_log, stage_name, started_utc, duration_seconds, status, summary)
-        write_run_log(run_log, config.run_log_path)
+        write_run_log(run_log, run_log_path)
 
 
-def show_run_summary(run_log: dict[str, Any], config: StudyConfig, log_path: Path) -> None:
+def show_run_summary(
+    run_log: dict[str, Any], config: StudyConfig, log_path: Path, run_log_path: Path
+) -> None:
     """Print the closing table of stages, durations, outcomes and output paths."""
     table = Table(title=f"Run summary (profile: {config.profile})")
     table.add_column("stage")
@@ -184,7 +193,7 @@ def show_run_summary(run_log: dict[str, Any], config: StudyConfig, log_path: Pat
         table.add_row(stage_name, entry["status"], f"{entry['duration_seconds']:.1f}", summary_text)
     show(table)
     show(f"results:  {config.results_dir}")
-    show(f"run log:  {config.run_log_path}")
+    show(f"run log:  {run_log_path}")
     show(f"log file: {log_path}")
 
 
@@ -214,14 +223,15 @@ def main(argv: list[str] | None = None) -> int:
     set_global_seeds(config.random_seed)
 
     is_full_run = arguments.stage == "all"
-    run_log = start_run_log(config, reset=is_full_run)
+    run_log_path = active_run_log_path(config, is_full_run)
+    run_log = start_run_log(config, is_full_run)
     stage_names = PIPELINE_ORDER if is_full_run else [arguments.stage]
     try:
         for stage_name in stage_names:
-            run_stage(stage_name, config, arguments, run_log)
+            run_stage(stage_name, config, arguments, run_log, run_log_path)
     except Exception:
         logger.exception("Pipeline stopped")
-        show_run_summary(run_log, config, log_path)
+        show_run_summary(run_log, config, log_path, run_log_path)
         return 1
-    show_run_summary(run_log, config, log_path)
+    show_run_summary(run_log, config, log_path, run_log_path)
     return 0

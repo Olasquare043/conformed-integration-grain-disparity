@@ -95,6 +95,12 @@ turns off progress bars. `results/run_log.json` records the Git commit and
 whether the tree had uncommitted changes, the configuration hash, library
 versions, machine details, and each stage's start, end, duration and summary.
 
+Only a full run (`make all`, every stage in one process) writes
+`results/run_log.json`. A stage run on its own, such as `make verify` or `make figures`,
+writes `results/run_log_partial.json` (git-ignored), so it can never overwrite the record of a full run. Code that
+needs a stage's latest result (the test counts in `paper_numbers.json`) reads
+whichever of the two logs ran it last.
+
 ## Experiments
 
 The experiment code follows `docs/analysis_plan.md` section by section:

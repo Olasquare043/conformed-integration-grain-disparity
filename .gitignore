@@ -6,6 +6,7 @@ data/
 
 # Run logs, smoke outputs and local environments
 logs/
+results/run_log_partial.json
 results/smoke/
 .venv/
 __pycache__/
@@ -16,3 +17,4 @@ __pycache__/
 
 # Packaged inputs for the manuscript (rebuilt on demand, not committed)
 manuscript_inputs.zip
+paper_figures.zip

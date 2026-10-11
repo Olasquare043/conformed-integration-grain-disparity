@@ -198,3 +198,26 @@ from-scratch run 1 and by 3.8 GB in run 2; about 5.5 hours in total from scratch
 `results/run_log.json` is the run log of run 2 and is the canonical record of the
 reproduced results. It marks the working tree dirty (`dirty_tree: true`) because
 the committed outputs had been deleted and were regenerated during the run.
+
+## 2026-10-11: the journal font was added to the Docker image after the clean-room run
+
+The clean-room reproduction (entry above) ran with the image built from the
+Dockerfile at commit `0cad375`. Commit `e0993b5` then added the Debian package
+`fonts-texgyre` to the Dockerfile, so the journal and concept figures can be drawn in
+TeX Gyre Heros. This affects figure rendering only: no table, number or model output
+depends on fonts. The committed `fig_*` figures were drawn inside the rebuilt image;
+the working figures from before were not redrawn. `make verify` does not compare figure
+pixels, but it requires the seven journal and concept figures to exist and every PNG to
+be 300 dpi. Because the image is no longer the one used in the clean-room run, **a
+fresh clean-room run will be done before the release tag**, from a new clone and in the
+current image.
+
+## 2026-10-11: only a full run writes results/run_log.json
+
+`make verify` was found to rewrite `results/run_log.json` with the header of the
+machine it ran on, which would have replaced the committed clean-room record. Now only
+a full run (`python -m cigd all`, as in `make all` and `make smoke`) writes
+`results/run_log.json`. Any stage run on its own writes `results/run_log_partial.json`,
+which is git-ignored. A test (`tests/test_run_log.py`) checks that a stage run leaves an
+existing run log byte for byte unchanged, and the committed clean-room run log was
+confirmed unchanged by its git hash.
