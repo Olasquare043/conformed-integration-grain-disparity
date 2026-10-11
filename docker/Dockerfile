@@ -8,9 +8,10 @@ FROM python:3.12-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3
 COPY --from=uv /uv /uvx /usr/local/bin/
 
 # make runs the stages, git records the commit in the run log, libgomp1 is
-# needed by LightGBM, and a fixed font keeps figures identical between runs.
+# needed by LightGBM, and fixed fonts (DejaVu, plus TeX Gyre Heros for the journal
+# figures) keep figures identical between runs.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends make git libgomp1 fonts-dejavu-core \
+ && apt-get install -y --no-install-recommends make git libgomp1 fonts-dejavu-core fonts-texgyre \
  && rm -rf /var/lib/apt/lists/* \
  && git config --system --add safe.directory /app
 

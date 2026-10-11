@@ -13,7 +13,7 @@ then prints a summary table of stages, durations and outcomes.
 | `warehouse` | Rebuilds the DuckDB warehouse from scratch, one timed SQL step per table | `data/<profile>/warehouse.duckdb`, `results/tables/warehouse_*.csv` |
 | `experiments` | Runs the pre-registered experiments in `docs/analysis_plan.md`: integration cost, the coarse-grain price forecasts and the fine-grain trip-duration models (`--experiment` runs one) | `results/tables/integration_*.csv`, `coarse_*.csv`, `fine_*.csv`; every forecast in `data/<profile>/experiments/` |
 | `test` | Runs the pytest suite against this profile's outputs, including the leakage tests and (on smoke) the determinism rerun | `results/run_log.json` |
-| `figures` | Draws every paper figure from the result tables | `results/figures/*.png` (300 dpi) and `*.pdf` |
+| `figures` | Draws the working figures used in the notebooks, the six journal-format result figures (`src/cigd/figures/paper_figures.py`) and the concept figure (`concept_figure.py`) from the result tables. Every number in the concept figure is read from `results/tables/` or the configuration | `results/figures/*.png` (300 dpi) and `*.pdf` |
 | `paper-numbers` | Collects every number the paper quotes from the outputs; computes nothing new | `results/paper_numbers.json` |
 | `notebooks` | Executes the five notebooks top to bottom with papermill and exports HTML; any error fails the stage | `results/notebooks/*.html` |
 
@@ -114,3 +114,14 @@ The experiment code follows `docs/analysis_plan.md` section by section:
 The coarse-grain leakage test rebuilds the features from data cut to exactly what
 had been published at a sample of origins and requires every feature to be
 unchanged.
+
+## Journal figures
+
+`paper_figures.py` and `concept_figure.py` draw the figures in the journal's style
+(TeX Gyre Heros, 6.2 or 6.6 inch wide). They read only `results/tables/` and the
+configuration, derive their axis limits and labels from the data, and write
+`fig_*.png` (300 dpi) and `fig_*.pdf` next to the working figures, which are kept.
+The Docker image installs the font (`fonts-texgyre`); on other machines the figures
+fall back to DejaVu Sans, whose wider glyphs can make some labels overflow their
+boxes, so the committed figures were drawn in the container. `make verify` requires
+all seven journal figures to exist in both formats and every PNG to be 300 dpi.

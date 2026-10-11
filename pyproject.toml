@@ -27,6 +27,7 @@ dependencies = [
     "pytest",
     "pyshp>=3.1.6",
     "shapely>=2.2.0",
+    "pillow>=12.3.0",
 ]
 
 [dependency-groups]
