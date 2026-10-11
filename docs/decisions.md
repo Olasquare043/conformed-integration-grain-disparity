@@ -131,3 +131,70 @@ it was committed and before any model ran:
 
 Everything else in the draft was approved as written, including the model
 settings, sample sizes, COVID window and query-latency design.
+
+## 2026-10-11: clean-room reproduction
+
+The study was rebuilt from a fresh clone of the repository, in the pinned Docker
+image, to check that `make all` regenerates the committed results. The clone sits
+in a sibling folder and the working folder was not used.
+
+**Run 1 (2026-10-10, head `2ad1534`) failed, and its verify result is void.** It
+downloaded every source from scratch: all 129 files matched the manifest, including
+the 84 streamed months and a fresh NYSERDA download fetched by the `fetch-nyserda`
+workflow, because data.ny.gov refuses this machine. The profile and warehouse
+outputs matched. Then the container was killed by the out-of-memory killer (exit
+137; the Docker VM log shows the Python process at 7.0 GB resident memory against a
+7.7 GB container limit) at the end of the fine-grain experiment, after 5.6 hours. The cause
+was the code, not the machine: the experiment held all 21 million predictions in
+memory at once, which only fitted on the 16 GB laptop it was first run on. The
+`verify` check reported "26 of 26 match" for that run, but it was vacuous: the
+fine-grain, figure, paper-number and notebook stages never ran, the clone still
+held the committed copies of their outputs, and `verify` only compared files that
+existed. That result was withdrawn.
+
+**Fixes** (commits `3be1446` and `0cad375`):
+
+- The fine-grain experiment processes one run and information set at a time and
+  appends its predictions to Parquet. Every smoke table was byte-identical before
+  and after the change, so no number moved.
+- `make verify` now also fails when a committed table, figure or notebook is
+  missing from the rebuild, and it compares `docs/data_profile.md` exactly. The
+  committed profile had been written before the configuration last changed and
+  carried a stale hash; it was refreshed from the clean run.
+- Each stage's peak memory is recorded in `results/run_log.json`, and the README
+  states that Docker needs at least 8 GB.
+
+**Run 2 (2026-10-11, same clone updated to `0cad375`) passed.** `make all` exited 0
+after 256 minutes and 87 tests passed (2 skipped by design: the determinism rerun
+runs on the smoke profile). `make verify` reported 27 of 27 outputs matching, none
+differing and none missing. Of 25 comparable tables, 19 were byte-identical to the
+committed ones (including the fine-grain accuracy table, so LightGBM gave identical
+results on Windows and in Linux), every name, flag and win mark matched, and the
+largest numeric difference was 2.5e-12 relative (coarse ridge and comparison
+tables).
+
+**Deviation: run 2 reused the downloaded raw files from run 1.** The 1.5 GB of
+2024 to 2025 trip files, the 84 zone-day aggregates and the small files were not
+downloaded again. Their checksums were verified from scratch in run 1 (all 129
+matched the manifest) and checked again against the manifest in run 2. Everything
+derived was deleted first and rebuilt: the warehouse, the feature and prediction
+files, every results table, figure and notebook, the paper numbers and
+`docs/data_profile.md`. The reason was disk space and time.
+
+**How run 2 got there.** A first attempt was paused by the low-disk rule when free
+space fell to 2.4 GB (most likely the Windows page file growing while the warehouse built). It was
+stopped and restarted instead of resumed, because a frozen container's clock keeps
+running and the pause would have been recorded as build time in the run log. A
+second attempt died within a minute when the Docker VM crashed during an
+interruption of the session (`unexpected EOF`). The third attempt completed, and the run log
+contains only that attempt.
+
+**Measured requirements** (also in the README): peak memory 6.4 GB for the
+warehouse stage and 6.9 GB for the experiments stage, in a container limited to
+7.7 GB; `data/` peaking at 4.0 GB; free system-drive space falling by 16 GB in the
+from-scratch run 1 and by 3.8 GB in run 2; about 5.5 hours in total from scratch
+(77 minutes of downloading, 256 minutes for run 2's stages).
+
+`results/run_log.json` is the run log of run 2 and is the canonical record of the
+reproduced results. It marks the working tree dirty (`dirty_tree: true`) because
+the committed outputs had been deleted and were regenerated during the run.

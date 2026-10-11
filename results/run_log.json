@@ -1,0 +1,226 @@
+{
+  "profile": "full",
+  "config_hash": "8756158737fac83d",
+  "git": {
+    "commit": "0cad37570aaf879704da260df6d4c38ada15d12c",
+    "dirty_tree": true
+  },
+  "library_versions": {
+    "duckdb": "1.5.6",
+    "pandas": "3.0.6",
+    "pyarrow": "26.0.0",
+    "numpy": "2.5.3",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "lightgbm": "4.7.0",
+    "statsmodels": "0.15.0",
+    "matplotlib": "3.11.2",
+    "requests": "2.34.2",
+    "rich": "15.0.0",
+    "papermill": "2.7.0"
+  },
+  "machine": {
+    "os": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.36",
+    "python": "3.12.15",
+    "processor": "x86_64",
+    "logical_cpus": 8,
+    "physical_cpus": 4,
+    "ram_gb": 7.7
+  },
+  "updated_utc": "2026-10-11T06:43:24+00:00",
+  "stages": {
+    "check-sources": {
+      "started_utc": "2026-10-11T02:26:42+00:00",
+      "ended_utc": "2026-10-11T02:27:01+00:00",
+      "duration_seconds": 19.456,
+      "status": "ok",
+      "peak_memory_mb": 304,
+      "summary": {
+        "sources_checked": 5,
+        "unreachable_but_cached": 1
+      }
+    },
+    "data": {
+      "started_utc": "2026-10-11T02:27:01+00:00",
+      "ended_utc": "2026-10-11T02:27:53+00:00",
+      "duration_seconds": 51.814,
+      "status": "ok",
+      "peak_memory_mb": 311,
+      "summary": {
+        "files": 129,
+        "rows": 524437448,
+        "bytes": 7934626755,
+        "manifest_aggregate_cached": 84,
+        "manifest_unchanged": 45
+      }
+    },
+    "profile": {
+      "started_utc": "2026-10-11T02:27:53+00:00",
+      "ended_utc": "2026-10-11T02:28:20+00:00",
+      "duration_seconds": 27.538,
+      "status": "ok",
+      "peak_memory_mb": 809,
+      "summary": {
+        "trip_rows": 89892322,
+        "price_series": 17,
+        "missing_series_weeks": 19,
+        "flagged_prices": 17,
+        "eia_level_check": "passed",
+        "eia_change_check": "passed"
+      }
+    },
+    "warehouse": {
+      "started_utc": "2026-10-11T02:28:20+00:00",
+      "ended_utc": "2026-10-11T02:30:55+00:00",
+      "duration_seconds": 154.813,
+      "status": "ok",
+      "peak_memory_mb": 6534,
+      "summary": {
+        "build_seconds": 154.2,
+        "warehouse_bytes": 2088513536,
+        "fact_trip_rows": 86079843,
+        "fact_fuel_price_weekly_rows": 7971,
+        "fact_weather_daily_rows": 52800,
+        "step_seconds": {
+          "stage_sources": 8.491,
+          "stg_zone_lookup": 0.024,
+          "stg_borough_region": 0.014,
+          "stg_metro_region": 0.012,
+          "dim_date": 0.024,
+          "dim_geography": 0.025,
+          "stg_trip_validity": 0.112,
+          "fact_trip": 84.286,
+          "audit_trip_validity": 55.891,
+          "fact_fuel_price_weekly": 0.262,
+          "fact_weather_daily": 0.431,
+          "agg_trip_zone_day": 0.326,
+          "agg_trip_zone_week": 0.314,
+          "agg_trip_region_week": 0.348,
+          "agg_weather_region_week": 0.097
+        }
+      }
+    },
+    "experiments": {
+      "started_utc": "2026-10-11T02:30:55+00:00",
+      "ended_utc": "2026-10-11T06:41:55+00:00",
+      "duration_seconds": 15061.576,
+      "status": "ok",
+      "peak_memory_mb": 7115,
+      "summary": {
+        "warehouse_builds": 3,
+        "latency_trip_grain_seconds": 0.7684,
+        "latency_region_week_seconds": 0.0074,
+        "coarse_comparisons": 36,
+        "coarse_main_wins": 10,
+        "coarse_skipped_per_region": 2,
+        "fine_comparisons": 22,
+        "fine_main_wins": 4,
+        "fine_test_trips": 4499970
+      }
+    },
+    "test": {
+      "started_utc": "2026-10-11T06:41:56+00:00",
+      "ended_utc": "2026-10-11T06:42:39+00:00",
+      "duration_seconds": 43.808,
+      "status": "ok",
+      "peak_memory_mb": 7115,
+      "summary": {
+        "passed": 87,
+        "failed": 0,
+        "skipped": 2,
+        "by_file": {
+          "test_config.py": {
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0
+          },
+          "test_determinism.py": {
+            "passed": 0,
+            "failed": 0,
+            "skipped": 2
+          },
+          "test_information_sets.py": {
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0
+          },
+          "test_leakage.py": {
+            "passed": 11,
+            "failed": 0,
+            "skipped": 0
+          },
+          "test_manifest.py": {
+            "passed": 4,
+            "failed": 0,
+            "skipped": 0
+          },
+          "test_nyserda_snapshot.py": {
+            "passed": 2,
+            "failed": 0,
+            "skipped": 0
+          },
+          "test_price_sources.py": {
+            "passed": 5,
+            "failed": 0,
+            "skipped": 0
+          },
+          "test_statistics.py": {
+            "passed": 8,
+            "failed": 0,
+            "skipped": 0
+          },
+          "test_warehouse_conformance.py": {
+            "passed": 47,
+            "failed": 0,
+            "skipped": 0
+          }
+        }
+      }
+    },
+    "figures": {
+      "started_utc": "2026-10-11T06:42:39+00:00",
+      "ended_utc": "2026-10-11T06:42:48+00:00",
+      "duration_seconds": 8.373,
+      "status": "ok",
+      "peak_memory_mb": 7115,
+      "summary": {
+        "figures": 8,
+        "files": 16
+      }
+    },
+    "paper-numbers": {
+      "started_utc": "2026-10-11T06:42:48+00:00",
+      "ended_utc": "2026-10-11T06:42:48+00:00",
+      "duration_seconds": 0.614,
+      "status": "ok",
+      "peak_memory_mb": 7115,
+      "summary": {
+        "sections": 9,
+        "path": "results/paper_numbers.json"
+      }
+    },
+    "notebooks": {
+      "started_utc": "2026-10-11T06:42:48+00:00",
+      "ended_utc": "2026-10-11T06:43:04+00:00",
+      "duration_seconds": 16.074,
+      "status": "ok",
+      "peak_memory_mb": 7115,
+      "summary": {
+        "notebooks": 5
+      }
+    },
+    "verify": {
+      "started_utc": "2026-10-11T06:43:24+00:00",
+      "ended_utc": "2026-10-11T06:43:27+00:00",
+      "duration_seconds": 2.829,
+      "status": "ok",
+      "peak_memory_mb": 303,
+      "summary": {
+        "checked": 27,
+        "matching": 27,
+        "no_committed_copy": 0,
+        "skipped_machine_dependent": 6
+      }
+    }
+  }
+}

@@ -61,25 +61,46 @@ every stage. Each stage can also be run on its own with
 
 ## Runtime and disk space
 
-The fine-grain experiment needs about 7 GB of memory when run natively. Give
-Docker at least 8 GB (a container capped at 8 GB was killed before the experiment
-was changed to write its predictions as it goes, and `results/run_log.json` now
-records each stage's peak memory).
+These figures come from the clean-room reproduction (see `docs/decisions.md`): a
+fresh clone built and run with `docker compose run --rm pipeline make all` on a
+Windows 11 laptop with 8 logical CPUs, 16 GB of RAM and Docker Desktop limited to
+7.7 GB. `results/run_log.json` is that run's log. Your times will differ, and the
+download time depends on your network.
 
-Measured on one Windows 11 laptop with 8 logical CPUs and 16 GB of RAM
-(`results/run_log.json` records the machine of every run). Your times will
-differ, and the download time depends on your network.
+| Stage | Minutes | Peak memory so far (GB) |
+|---|---|---|
+| check-sources | 0.3 | 0.3 |
+| data | 0.9 | 0.3 |
+| profile | 0.5 | 0.8 |
+| warehouse | 2.6 | 6.4 |
+| experiments | 251.0 | 6.9 |
+| test | 0.7 | 6.9 |
+| figures | 0.1 | 6.9 |
+| paper-numbers | 0.0 | 6.9 |
+| notebooks | 0.3 | 6.9 |
+
+Peak memory is the highest the pipeline process has reached up to the end of that
+stage, so it never goes down. The warehouse build needs 6.4 GB (DuckDB), and the
+experiments stage 6.9 GB because it rebuilds the warehouse three times to time
+it. **Give Docker at least 8 GB.** The clean-room run completed under a 7.7 GB
+limit, but with little to spare. Under the same limit, an earlier version that held
+all predictions in memory was killed by the out-of-memory killer.
 
 | Run | Download | Disk | Time |
 |---|---|---|---|
-| `make smoke` | about 110 MB | about 0.4 GB | about 8 minutes |
-| `make all` | about 7.9 GB, of which 6.4 GB is streamed and deleted | about 4 GB kept (1.5 GB raw, 2.1 GB warehouse), a little more while running | about 6.5 hours of computing, plus the download |
+| `make smoke` | about 110 MB | about 0.4 GB | about 4 to 8 minutes |
+| `make all` | about 7.9 GB, of which 6.4 GB is streamed and deleted | `data/` peaks at 4.0 GB (1.4 GB raw, 2.5 GB derived including the 2.1 GB warehouse) | about 5.5 hours: about 77 minutes of downloading and 4.3 hours of computing |
 
-Most of the time is the fine-grain experiment (about 5.5 hours: 240 LightGBM
-fits on up to several million trips each). The warehouse builds in about 3
-minutes, the integration-cost experiment takes about 9 minutes and the
-coarse-grain experiment about 15. The 84 historical months took about two hours to download and
-count on the development network.
+The 4.3 hours of computing is nearly all the experiments stage (251 minutes, mainly
+240 LightGBM fits in the fine-grain task). On the same laptop run natively on
+Windows, the fine-grain task alone took about 5.6 hours. The 77 minutes of
+downloading was measured from scratch on the development network; the clean-room
+run reused those downloads after checking their checksums.
+
+Beyond `data/`, a first run from nothing also needs room for the Docker image, and
+on Windows the system page file grows while the warehouse builds: free space fell
+by 16 GB in the from-scratch run, against 3.8 GB when the downloads were already
+in place. **Keep about 20 GB free on the system drive.**
 
 The full run downloads every yellow taxi month from 2017 to 2025. Months before
 2024 are reduced to daily trip counts per zone and deleted straight away, so only
@@ -92,9 +113,15 @@ random seed. `provenance/manifest.csv` records the URL, query parameters,
 access time, size, SHA-256 checksum and row count of every file the authors
 downloaded. When you run `make data`, each new download is checked against that
 manifest and any changed source is reported in a clear warning. After a full
-run, compare your `results/` with the committed copy (`git diff --stat
-results/`); `results/run_log.json` records the commit, configuration hash,
-library versions and machine your outputs came from.
+run, check your outputs with `make verify`. It compares every table with the
+committed copy (exactly for counts and profiles, and to a relative tolerance of
+1e-6 for model results), checks `docs/data_profile.md`, and fails if any
+committed table, figure or notebook was not regenerated. Timings and storage
+sizes depend on the machine and are skipped. In the clean-room run, 19 of the 25
+comparable tables were byte-identical to the committed ones, every name, flag and
+win mark matched, and the largest numeric difference was 2.5e-12 (relative).
+`results/run_log.json` records the commit, configuration hash, library versions
+and machine of the clean-room run.
 
 ## Repository map
 
