@@ -13,3 +13,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .ipynb_checkpoints/
+
+# Packaged inputs for the manuscript (rebuilt on demand, not committed)
+manuscript_inputs.zip
